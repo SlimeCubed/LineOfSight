@@ -1,0 +1,2326 @@
+// Compiled shader for all platforms, uncompressed size: 72.9KB
+
+Shader "Custom/LevelOutOfFOV" {
+Properties {
+ _MainTex ("Base (RGB) Trans (A)", 2D) = "white" {}
+}
+SubShader { 
+ Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+
+
+ // Stats for Vertex shader:
+ //       d3d11 : 5 math
+ //        d3d9 : 6 math
+ //        gles : 234 math, 16 texture, 17 branch
+ //       gles3 : 234 math, 16 texture, 17 branch
+ //   glesdesktop : 234 math, 16 texture, 17 branch
+ //       metal : 3 math
+ //      opengl : 6 math
+ // Stats for Fragment shader:
+ //       d3d11 : 137 math, 16 texture, 6 branch
+ //        d3d9 : 240 math, 16 texture, 6 branch
+ //       metal : 234 math, 16 texture, 17 branch
+ //      opengl : 253 math, 15 texture
+ Pass {
+  Tags { "QUEUE"="Transparent" "IGNOREPROJECTOR"="true" "RenderType"="Transparent" }
+  BindChannels {
+   Bind "vertex", Vertex
+   Bind "color", Color
+   Bind "texcoord", TexCoord
+  }
+  ZWrite Off
+  Cull Off
+  Fog {
+   Color (0,0,0,0)
+  }
+  Blend SrcAlpha OneMinusSrcAlpha
+Program "vp" {
+SubProgram "opengl " {
+// Stats: 6 math
+Bind "vertex" Vertex
+Bind "color" Color
+Bind "texcoord" TexCoord0
+Vector 5 [_MainTex_ST]
+"3.0-!!ARBvp1.0
+PARAM c[6] = { program.local[0],
+		state.matrix.mvp,
+		program.local[5] };
+MOV result.color, vertex.color;
+MAD result.texcoord[0].xy, vertex.texcoord[0], c[5], c[5].zwzw;
+DP4 result.position.w, vertex.position, c[4];
+DP4 result.position.z, vertex.position, c[3];
+DP4 result.position.y, vertex.position, c[2];
+DP4 result.position.x, vertex.position, c[1];
+END
+# 6 instructions, 0 R-regs
+"
+}
+SubProgram "d3d9 " {
+// Stats: 6 math
+Bind "vertex" Vertex
+Bind "color" Color
+Bind "texcoord" TexCoord0
+Matrix 0 [glstate_matrix_mvp]
+Vector 4 [_MainTex_ST]
+"vs_3_0
+dcl_position o0
+dcl_texcoord0 o1
+dcl_color0 o2
+dcl_position0 v0
+dcl_texcoord0 v1
+dcl_color0 v2
+mov o2, v2
+mad o1.xy, v1, c4, c4.zwzw
+dp4 o0.w, v0, c3
+dp4 o0.z, v0, c2
+dp4 o0.y, v0, c1
+dp4 o0.x, v0, c0
+"
+}
+SubProgram "d3d11 " {
+// Stats: 5 math
+Bind "vertex" Vertex
+Bind "color" Color
+Bind "texcoord" TexCoord0
+ConstBuffer "$Globals" 112
+Vector 96 [_MainTex_ST]
+ConstBuffer "UnityPerDraw" 336
+Matrix 0 [glstate_matrix_mvp]
+BindCB  "$Globals" 0
+BindCB  "UnityPerDraw" 1
+"vs_4_0
+eefiecedopgiihmfdgooenfkcpebhnmmmljlfldaabaaaaaahaacaaaaadaaaaaa
+cmaaaaaajmaaaaaabaabaaaaejfdeheogiaaaaaaadaaaaaaaiaaaaaafaaaaaaa
+aaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaapapaaaafjaaaaaaaaaaaaaaaaaaaaaa
+adaaaaaaabaaaaaaadadaaaagcaaaaaaaaaaaaaaaaaaaaaaadaaaaaaacaaaaaa
+apapaaaafaepfdejfeejepeoaafeeffiedepepfceeaaedepemepfcaaepfdeheo
+gmaaaaaaadaaaaaaaiaaaaaafaaaaaaaaaaaaaaaabaaaaaaadaaaaaaaaaaaaaa
+apaaaaaafmaaaaaaaaaaaaaaaaaaaaaaadaaaaaaabaaaaaaadamaaaagfaaaaaa
+aaaaaaaaaaaaaaaaadaaaaaaacaaaaaaapaaaaaafdfgfpfaepfdejfeejepeoaa
+feeffiedepepfceeaaedepemepfcaaklfdeieefcfiabaaaaeaaaabaafgaaaaaa
+fjaaaaaeegiocaaaaaaaaaaaahaaaaaafjaaaaaeegiocaaaabaaaaaaaeaaaaaa
+fpaaaaadpcbabaaaaaaaaaaafpaaaaaddcbabaaaabaaaaaafpaaaaadpcbabaaa
+acaaaaaaghaaaaaepccabaaaaaaaaaaaabaaaaaagfaaaaaddccabaaaabaaaaaa
+gfaaaaadpccabaaaacaaaaaagiaaaaacabaaaaaadiaaaaaipcaabaaaaaaaaaaa
+fgbfbaaaaaaaaaaaegiocaaaabaaaaaaabaaaaaadcaaaaakpcaabaaaaaaaaaaa
+egiocaaaabaaaaaaaaaaaaaaagbabaaaaaaaaaaaegaobaaaaaaaaaaadcaaaaak
+pcaabaaaaaaaaaaaegiocaaaabaaaaaaacaaaaaakgbkbaaaaaaaaaaaegaobaaa
+aaaaaaaadcaaaaakpccabaaaaaaaaaaaegiocaaaabaaaaaaadaaaaaapgbpbaaa
+aaaaaaaaegaobaaaaaaaaaaadcaaaaaldccabaaaabaaaaaaegbabaaaabaaaaaa
+egiacaaaaaaaaaaaagaaaaaaogikcaaaaaaaaaaaagaaaaaadgaaaaafpccabaaa
+acaaaaaaegbobaaaacaaaaaadoaaaaab"
+}
+SubProgram "gles " {
+// Stats: 234 math, 16 textures, 17 branches
+"!!GLES
+
+
+#ifdef VERTEX
+
+attribute vec4 _glesVertex;
+attribute vec4 _glesColor;
+attribute vec4 _glesMultiTexCoord0;
+uniform highp mat4 glstate_matrix_mvp;
+uniform highp vec4 _MainTex_ST;
+varying highp vec2 xlv_TEXCOORD0;
+varying lowp vec4 xlv_COLOR;
+void main ()
+{
+  gl_Position = (glstate_matrix_mvp * _glesVertex);
+  xlv_TEXCOORD0 = ((_glesMultiTexCoord0.xy * _MainTex_ST.xy) + _MainTex_ST.zw);
+  xlv_COLOR = _glesColor;
+}
+
+
+
+#endif
+#ifdef FRAGMENT
+
+uniform sampler2D _MainTex;
+uniform sampler2D _PalTex;
+uniform sampler2D _NoiseTex;
+uniform highp float _RAIN;
+uniform highp float _light;
+uniform highp vec4 _spriteRect;
+uniform highp float _fogAmount;
+uniform highp float _waterLevel;
+uniform highp float _Grime;
+uniform highp float _SwarmRoom;
+uniform highp float _WetTerrain;
+uniform highp float _cloudsSpeed;
+varying highp vec2 xlv_TEXCOORD0;
+varying lowp vec4 xlv_COLOR;
+void main ()
+{
+  highp float t_1;
+  highp float lum_2;
+  mediump vec4 texcol_3;
+  mediump vec2 screenPos_4;
+  highp float displace_5;
+  mediump vec4 setColor_6;
+  setColor_6 = vec4(0.0, 0.0, 0.0, 1.0);
+  lowp float tmpvar_7;
+  tmpvar_7 = ((texture2D (_MainTex, xlv_TEXCOORD0).x * 255.0) / 90.0);
+  lowp float tmpvar_8;
+  tmpvar_8 = (fract(abs(tmpvar_7)) * 90.0);
+  lowp float tmpvar_9;
+  if ((tmpvar_7 >= 0.0)) {
+    tmpvar_9 = tmpvar_8;
+  } else {
+    tmpvar_9 = -(tmpvar_8);
+  };
+  lowp float tmpvar_10;
+  tmpvar_10 = ((tmpvar_9 - 1.0) / 30.0);
+  lowp float tmpvar_11;
+  tmpvar_11 = (fract(abs(tmpvar_10)) * 30.0);
+  lowp float tmpvar_12;
+  if ((tmpvar_10 >= 0.0)) {
+    tmpvar_12 = tmpvar_11;
+  } else {
+    tmpvar_12 = -(tmpvar_11);
+  };
+  highp float tmpvar_13;
+  tmpvar_13 = (tmpvar_12 / 300.0);
+  highp vec2 tmpvar_14;
+  tmpvar_14.x = (((xlv_TEXCOORD0.x * 1.5) - tmpvar_13) + (_RAIN * 0.01));
+  tmpvar_14.y = (((xlv_TEXCOORD0.y * 0.25) - tmpvar_13) + (_RAIN * 0.05));
+  lowp float tmpvar_15;
+  tmpvar_15 = texture2D (_NoiseTex, tmpvar_14).x;
+  displace_5 = tmpvar_15;
+  displace_5 = clamp (((
+    sin((9.42 * ((
+      (displace_5 + xlv_TEXCOORD0.x)
+     + xlv_TEXCOORD0.y) + (_RAIN * 0.1))))
+   - 0.95) * 20.0), 0.0, 1.0);
+  highp vec2 tmpvar_16;
+  tmpvar_16.x = mix (_spriteRect.x, _spriteRect.z, xlv_TEXCOORD0.x);
+  tmpvar_16.y = mix (_spriteRect.y, _spriteRect.w, xlv_TEXCOORD0.y);
+  screenPos_4 = tmpvar_16;
+  if (((_WetTerrain < 0.5) || ((1.0 - screenPos_4.y) > _waterLevel))) {
+    displace_5 = 0.0;
+  };
+  highp vec2 tmpvar_17;
+  tmpvar_17.x = xlv_TEXCOORD0.x;
+  tmpvar_17.y = (xlv_TEXCOORD0.y + (displace_5 * 0.001));
+  lowp vec4 tmpvar_18;
+  tmpvar_18 = texture2D (_MainTex, tmpvar_17);
+  texcol_3 = tmpvar_18;
+  if ((((texcol_3.x == 1.0) && (texcol_3.y == 1.0)) && (texcol_3.z == 1.0))) {
+    lowp vec4 tmpvar_19;
+    tmpvar_19 = texture2D (_PalTex, vec2(0.015625, 0.9375));
+    setColor_6 = tmpvar_19;
+  } else {
+    mediump float rbcol_20;
+    mediump float shadow_21;
+    mediump float notFloorDark_22;
+    int effectCol_23;
+    int green_24;
+    int red_25;
+    int tmpvar_26;
+    tmpvar_26 = int((texcol_3.x * 255.0));
+    red_25 = tmpvar_26;
+    int tmpvar_27;
+    tmpvar_27 = int((texcol_3.y * 255.0));
+    green_24 = tmpvar_27;
+    effectCol_23 = 0;
+    notFloorDark_22 = 1.0;
+    if ((green_24 >= 16)) {
+      notFloorDark_22 = 0.0;
+      green_24 = (green_24 - 16);
+    };
+    if ((green_24 >= 8)) {
+      effectCol_23 = 100;
+      green_24 = (green_24 - 8);
+    } else {
+      effectCol_23 = green_24;
+    };
+    highp float tmpvar_28;
+    tmpvar_28 = (float(red_25) / 30.0);
+    highp float tmpvar_29;
+    tmpvar_29 = (fract(abs(tmpvar_28)) * 30.0);
+    highp float tmpvar_30;
+    if ((tmpvar_28 >= 0.0)) {
+      tmpvar_30 = tmpvar_29;
+    } else {
+      tmpvar_30 = -(tmpvar_29);
+    };
+    highp float tmpvar_31;
+    tmpvar_31 = (float(red_25) / 30.0);
+    highp float tmpvar_32;
+    tmpvar_32 = (fract(abs(tmpvar_31)) * 30.0);
+    highp float tmpvar_33;
+    if ((tmpvar_31 >= 0.0)) {
+      tmpvar_33 = tmpvar_32;
+    } else {
+      tmpvar_33 = -(tmpvar_32);
+    };
+    highp vec2 tmpvar_34;
+    highp float cse_35;
+    cse_35 = (_RAIN * 0.1);
+    tmpvar_34.x = (((xlv_TEXCOORD0.x * 0.5) + (cse_35 * _cloudsSpeed)) - (0.003 * tmpvar_30));
+    tmpvar_34.y = (((1.0 - 
+      (xlv_TEXCOORD0.y * 0.5)
+    ) + (
+      (_RAIN * 0.2)
+     * _cloudsSpeed)) - (0.003 * tmpvar_33));
+    lowp float tmpvar_36;
+    tmpvar_36 = texture2D (_NoiseTex, tmpvar_34).x;
+    shadow_21 = tmpvar_36;
+    highp float tmpvar_37;
+    tmpvar_37 = ((shadow_21 + (cse_35 * _cloudsSpeed)) - xlv_TEXCOORD0.y);
+    highp float tmpvar_38;
+    tmpvar_38 = fract(abs(tmpvar_37));
+    highp float tmpvar_39;
+    if ((tmpvar_37 >= 0.0)) {
+      tmpvar_39 = tmpvar_38;
+    } else {
+      tmpvar_39 = -(tmpvar_38);
+    };
+    highp float tmpvar_40;
+    tmpvar_40 = sin((6.28 * tmpvar_39));
+    mediump float tmpvar_41;
+    tmpvar_41 = (0.5 + (tmpvar_40 * 0.5));
+    highp float tmpvar_42;
+    tmpvar_42 = clamp (((
+      ((tmpvar_41 - 0.5) * 6.0)
+     + 0.5) - (_light * 4.0)), 0.0, 1.0);
+    shadow_21 = tmpvar_42;
+    if ((red_25 > 90)) {
+      red_25 = (red_25 - 90);
+    } else {
+      shadow_21 = 1.0;
+    };
+    int tmpvar_43;
+    tmpvar_43 = int(clamp (floor(
+      (float((red_25 - 1)) / 30.0)
+    ), 0.0, 2.0));
+    highp float tmpvar_44;
+    tmpvar_44 = (float((red_25 - 1)) / 30.0);
+    highp float tmpvar_45;
+    tmpvar_45 = (fract(abs(tmpvar_44)) * 30.0);
+    highp float tmpvar_46;
+    if ((tmpvar_44 >= 0.0)) {
+      tmpvar_46 = tmpvar_45;
+    } else {
+      tmpvar_46 = -(tmpvar_45);
+    };
+    int tmpvar_47;
+    tmpvar_47 = int(tmpvar_46);
+    red_25 = tmpvar_47;
+    highp vec2 tmpvar_48;
+    tmpvar_48.x = ((float(tmpvar_47) * notFloorDark_22) / 32.0);
+    tmpvar_48.y = ((float(
+      (tmpvar_43 + 3)
+    ) + 0.5) / 8.0);
+    lowp vec4 tmpvar_49;
+    tmpvar_49 = texture2D (_PalTex, tmpvar_48);
+    highp vec2 tmpvar_50;
+    tmpvar_50.x = ((float(tmpvar_47) * notFloorDark_22) / 32.0);
+    tmpvar_50.y = ((float(tmpvar_43) + 0.5) / 8.0);
+    lowp vec4 tmpvar_51;
+    tmpvar_51 = texture2D (_PalTex, tmpvar_50);
+    mediump vec4 tmpvar_52;
+    tmpvar_52 = mix (tmpvar_49, tmpvar_51, vec4(shadow_21));
+    setColor_6 = tmpvar_52;
+    highp vec2 tmpvar_53;
+    tmpvar_53 = (xlv_TEXCOORD0 * vec2(2.0, 2.0));
+    lowp vec4 tmpvar_54;
+    tmpvar_54 = texture2D (_NoiseTex, tmpvar_53);
+    highp float tmpvar_55;
+    tmpvar_55 = ((sin(
+      (6.28 * ((_RAIN + (tmpvar_54.x * 4.0)) + (float(tmpvar_47) / 12.0)))
+    ) * 0.5) + 0.5);
+    rbcol_20 = tmpvar_55;
+    mediump vec2 tmpvar_56;
+    tmpvar_56.y = 0.8125;
+    tmpvar_56.x = ((5.5 + (rbcol_20 * 25.0)) / 32.0);
+    lowp vec4 tmpvar_57;
+    tmpvar_57 = texture2D (_PalTex, tmpvar_56);
+    highp float tmpvar_58;
+    if ((green_24 >= 4)) {
+      tmpvar_58 = 0.2;
+    } else {
+      tmpvar_58 = 0.0;
+    };
+    highp vec4 tmpvar_59;
+    tmpvar_59 = mix (tmpvar_52, tmpvar_57, vec4((tmpvar_58 * _Grime)));
+    setColor_6 = tmpvar_59;
+    if ((effectCol_23 == 100)) {
+      mediump vec4 decalCol_60;
+      mediump vec2 tmpvar_61;
+      tmpvar_61.y = 0.999375;
+      tmpvar_61.x = ((255.5 - (texcol_3.z * 255.0)) / 1400.0);
+      lowp vec4 tmpvar_62;
+      tmpvar_62 = texture2D (_MainTex, tmpvar_61);
+      decalCol_60 = tmpvar_62;
+      if ((tmpvar_43 == 2)) {
+        decalCol_60 = mix (decalCol_60, vec4(1.0, 1.0, 1.0, 1.0), vec4((0.2 - (shadow_21 * 0.1))));
+      };
+      lowp vec4 tmpvar_63;
+      tmpvar_63 = texture2D (_PalTex, vec2(0.046875, 0.9375));
+      highp vec4 tmpvar_64;
+      tmpvar_64 = mix (decalCol_60, tmpvar_63, vec4((float(tmpvar_47) / 60.0)));
+      decalCol_60 = tmpvar_64;
+      mediump vec4 tmpvar_65;
+      tmpvar_65 = mix (setColor_6, decalCol_60, vec4(0.7, 0.7, 0.7, 0.7));
+      mediump float y_66;
+      y_66 = (0.3 + (0.4 * shadow_21));
+      highp vec4 tmpvar_67;
+      mediump vec4 y_68;
+      y_68 = ((setColor_6 * decalCol_60) * 1.5);
+      tmpvar_67 = mix (tmpvar_65, y_68, vec4(mix (0.9, y_66, clamp (
+        ((float(tmpvar_47) - 3.5) * 0.3)
+      , 0.0, 1.0))));
+      setColor_6 = tmpvar_67;
+    } else {
+      if (((green_24 > 0) && (green_24 < 3))) {
+        highp vec2 tmpvar_69;
+        tmpvar_69.x = 0.953125;
+        tmpvar_69.y = ((5.5 - float(
+          ((effectCol_23 - 1) * 2)
+        )) / 8.0);
+        lowp vec4 tmpvar_70;
+        tmpvar_70 = texture2D (_PalTex, tmpvar_69);
+        highp vec2 tmpvar_71;
+        tmpvar_71.x = 0.984375;
+        tmpvar_71.y = ((5.5 - float(
+          ((effectCol_23 - 1) * 2)
+        )) / 8.0);
+        lowp vec4 tmpvar_72;
+        tmpvar_72 = texture2D (_PalTex, tmpvar_71);
+        mediump vec4 tmpvar_73;
+        tmpvar_73 = mix (tmpvar_70, tmpvar_72, vec4(shadow_21));
+        highp vec2 tmpvar_74;
+        tmpvar_74.x = 0.953125;
+        tmpvar_74.y = ((4.5 - float(
+          ((effectCol_23 - 1) * 2)
+        )) / 8.0);
+        lowp vec4 tmpvar_75;
+        tmpvar_75 = texture2D (_PalTex, tmpvar_74);
+        highp vec2 tmpvar_76;
+        tmpvar_76.x = 0.984375;
+        tmpvar_76.y = ((4.5 - float(
+          ((effectCol_23 - 1) * 2)
+        )) / 8.0);
+        lowp vec4 tmpvar_77;
+        tmpvar_77 = texture2D (_PalTex, tmpvar_76);
+        mediump vec4 tmpvar_78;
+        tmpvar_78 = mix (tmpvar_75, tmpvar_77, vec4(shadow_21));
+        highp vec4 tmpvar_79;
+        tmpvar_79 = mix (setColor_6, mix (tmpvar_73, tmpvar_78, vec4((
+          float(tmpvar_47)
+         / 30.0))), texcol_3.zzzz);
+        setColor_6 = tmpvar_79;
+      } else {
+        if ((green_24 == 3)) {
+          highp vec4 tmpvar_80;
+          tmpvar_80 = mix (setColor_6, vec4(1.0, 1.0, 1.0, 1.0), vec4((texcol_3.z * _SwarmRoom)));
+          setColor_6 = tmpvar_80;
+        };
+      };
+    };
+    lowp vec4 tmpvar_81;
+    tmpvar_81 = texture2D (_PalTex, vec2(0.046875, 0.9375));
+    mediump float tmpvar_82;
+    if ((tmpvar_47 < 10)) {
+      tmpvar_82 = mix (notFloorDark_22, 1.0, 0.5);
+    } else {
+      tmpvar_82 = 1.0;
+    };
+    highp vec4 tmpvar_83;
+    tmpvar_83 = mix (setColor_6, tmpvar_81, vec4(clamp ((
+      ((float(tmpvar_47) * tmpvar_82) * _fogAmount)
+     / 30.0), 0.0, 1.0)));
+    setColor_6 = tmpvar_83;
+  };
+  setColor_6.xyz = (setColor_6.xyz * xlv_COLOR.x);
+  mediump float tmpvar_84;
+  tmpvar_84 = (((setColor_6.x * 0.2126) + (setColor_6.y * 0.7152)) + (setColor_6.z * 0.0722));
+  lum_2 = tmpvar_84;
+  lowp float tmpvar_85;
+  tmpvar_85 = (xlv_COLOR.y * 0.9);
+  t_1 = tmpvar_85;
+  highp vec3 tmpvar_86;
+  tmpvar_86 = (setColor_6.xyz / ((1.0 - t_1) + (lum_2 * t_1)));
+  setColor_6.xyz = tmpvar_86;
+  setColor_6.w = (setColor_6.w * xlv_COLOR.w);
+  gl_FragData[0] = setColor_6;
+}
+
+
+
+#endif"
+}
+SubProgram "glesdesktop " {
+// Stats: 234 math, 16 textures, 17 branches
+"!!GLES
+
+
+#ifdef VERTEX
+
+attribute vec4 _glesVertex;
+attribute vec4 _glesColor;
+attribute vec4 _glesMultiTexCoord0;
+uniform highp mat4 glstate_matrix_mvp;
+uniform highp vec4 _MainTex_ST;
+varying highp vec2 xlv_TEXCOORD0;
+varying lowp vec4 xlv_COLOR;
+void main ()
+{
+  gl_Position = (glstate_matrix_mvp * _glesVertex);
+  xlv_TEXCOORD0 = ((_glesMultiTexCoord0.xy * _MainTex_ST.xy) + _MainTex_ST.zw);
+  xlv_COLOR = _glesColor;
+}
+
+
+
+#endif
+#ifdef FRAGMENT
+
+uniform sampler2D _MainTex;
+uniform sampler2D _PalTex;
+uniform sampler2D _NoiseTex;
+uniform highp float _RAIN;
+uniform highp float _light;
+uniform highp vec4 _spriteRect;
+uniform highp float _fogAmount;
+uniform highp float _waterLevel;
+uniform highp float _Grime;
+uniform highp float _SwarmRoom;
+uniform highp float _WetTerrain;
+uniform highp float _cloudsSpeed;
+varying highp vec2 xlv_TEXCOORD0;
+varying lowp vec4 xlv_COLOR;
+void main ()
+{
+  highp float t_1;
+  highp float lum_2;
+  mediump vec4 texcol_3;
+  mediump vec2 screenPos_4;
+  highp float displace_5;
+  mediump vec4 setColor_6;
+  setColor_6 = vec4(0.0, 0.0, 0.0, 1.0);
+  lowp float tmpvar_7;
+  tmpvar_7 = ((texture2D (_MainTex, xlv_TEXCOORD0).x * 255.0) / 90.0);
+  lowp float tmpvar_8;
+  tmpvar_8 = (fract(abs(tmpvar_7)) * 90.0);
+  lowp float tmpvar_9;
+  if ((tmpvar_7 >= 0.0)) {
+    tmpvar_9 = tmpvar_8;
+  } else {
+    tmpvar_9 = -(tmpvar_8);
+  };
+  lowp float tmpvar_10;
+  tmpvar_10 = ((tmpvar_9 - 1.0) / 30.0);
+  lowp float tmpvar_11;
+  tmpvar_11 = (fract(abs(tmpvar_10)) * 30.0);
+  lowp float tmpvar_12;
+  if ((tmpvar_10 >= 0.0)) {
+    tmpvar_12 = tmpvar_11;
+  } else {
+    tmpvar_12 = -(tmpvar_11);
+  };
+  highp float tmpvar_13;
+  tmpvar_13 = (tmpvar_12 / 300.0);
+  highp vec2 tmpvar_14;
+  tmpvar_14.x = (((xlv_TEXCOORD0.x * 1.5) - tmpvar_13) + (_RAIN * 0.01));
+  tmpvar_14.y = (((xlv_TEXCOORD0.y * 0.25) - tmpvar_13) + (_RAIN * 0.05));
+  lowp float tmpvar_15;
+  tmpvar_15 = texture2D (_NoiseTex, tmpvar_14).x;
+  displace_5 = tmpvar_15;
+  displace_5 = clamp (((
+    sin((9.42 * ((
+      (displace_5 + xlv_TEXCOORD0.x)
+     + xlv_TEXCOORD0.y) + (_RAIN * 0.1))))
+   - 0.95) * 20.0), 0.0, 1.0);
+  highp vec2 tmpvar_16;
+  tmpvar_16.x = mix (_spriteRect.x, _spriteRect.z, xlv_TEXCOORD0.x);
+  tmpvar_16.y = mix (_spriteRect.y, _spriteRect.w, xlv_TEXCOORD0.y);
+  screenPos_4 = tmpvar_16;
+  if (((_WetTerrain < 0.5) || ((1.0 - screenPos_4.y) > _waterLevel))) {
+    displace_5 = 0.0;
+  };
+  highp vec2 tmpvar_17;
+  tmpvar_17.x = xlv_TEXCOORD0.x;
+  tmpvar_17.y = (xlv_TEXCOORD0.y + (displace_5 * 0.001));
+  lowp vec4 tmpvar_18;
+  tmpvar_18 = texture2D (_MainTex, tmpvar_17);
+  texcol_3 = tmpvar_18;
+  if ((((texcol_3.x == 1.0) && (texcol_3.y == 1.0)) && (texcol_3.z == 1.0))) {
+    lowp vec4 tmpvar_19;
+    tmpvar_19 = texture2D (_PalTex, vec2(0.015625, 0.9375));
+    setColor_6 = tmpvar_19;
+  } else {
+    mediump float rbcol_20;
+    mediump float shadow_21;
+    mediump float notFloorDark_22;
+    int effectCol_23;
+    int green_24;
+    int red_25;
+    int tmpvar_26;
+    tmpvar_26 = int((texcol_3.x * 255.0));
+    red_25 = tmpvar_26;
+    int tmpvar_27;
+    tmpvar_27 = int((texcol_3.y * 255.0));
+    green_24 = tmpvar_27;
+    effectCol_23 = 0;
+    notFloorDark_22 = 1.0;
+    if ((green_24 >= 16)) {
+      notFloorDark_22 = 0.0;
+      green_24 = (green_24 - 16);
+    };
+    if ((green_24 >= 8)) {
+      effectCol_23 = 100;
+      green_24 = (green_24 - 8);
+    } else {
+      effectCol_23 = green_24;
+    };
+    highp float tmpvar_28;
+    tmpvar_28 = (float(red_25) / 30.0);
+    highp float tmpvar_29;
+    tmpvar_29 = (fract(abs(tmpvar_28)) * 30.0);
+    highp float tmpvar_30;
+    if ((tmpvar_28 >= 0.0)) {
+      tmpvar_30 = tmpvar_29;
+    } else {
+      tmpvar_30 = -(tmpvar_29);
+    };
+    highp float tmpvar_31;
+    tmpvar_31 = (float(red_25) / 30.0);
+    highp float tmpvar_32;
+    tmpvar_32 = (fract(abs(tmpvar_31)) * 30.0);
+    highp float tmpvar_33;
+    if ((tmpvar_31 >= 0.0)) {
+      tmpvar_33 = tmpvar_32;
+    } else {
+      tmpvar_33 = -(tmpvar_32);
+    };
+    highp vec2 tmpvar_34;
+    highp float cse_35;
+    cse_35 = (_RAIN * 0.1);
+    tmpvar_34.x = (((xlv_TEXCOORD0.x * 0.5) + (cse_35 * _cloudsSpeed)) - (0.003 * tmpvar_30));
+    tmpvar_34.y = (((1.0 - 
+      (xlv_TEXCOORD0.y * 0.5)
+    ) + (
+      (_RAIN * 0.2)
+     * _cloudsSpeed)) - (0.003 * tmpvar_33));
+    lowp float tmpvar_36;
+    tmpvar_36 = texture2D (_NoiseTex, tmpvar_34).x;
+    shadow_21 = tmpvar_36;
+    highp float tmpvar_37;
+    tmpvar_37 = ((shadow_21 + (cse_35 * _cloudsSpeed)) - xlv_TEXCOORD0.y);
+    highp float tmpvar_38;
+    tmpvar_38 = fract(abs(tmpvar_37));
+    highp float tmpvar_39;
+    if ((tmpvar_37 >= 0.0)) {
+      tmpvar_39 = tmpvar_38;
+    } else {
+      tmpvar_39 = -(tmpvar_38);
+    };
+    highp float tmpvar_40;
+    tmpvar_40 = sin((6.28 * tmpvar_39));
+    mediump float tmpvar_41;
+    tmpvar_41 = (0.5 + (tmpvar_40 * 0.5));
+    highp float tmpvar_42;
+    tmpvar_42 = clamp (((
+      ((tmpvar_41 - 0.5) * 6.0)
+     + 0.5) - (_light * 4.0)), 0.0, 1.0);
+    shadow_21 = tmpvar_42;
+    if ((red_25 > 90)) {
+      red_25 = (red_25 - 90);
+    } else {
+      shadow_21 = 1.0;
+    };
+    int tmpvar_43;
+    tmpvar_43 = int(clamp (floor(
+      (float((red_25 - 1)) / 30.0)
+    ), 0.0, 2.0));
+    highp float tmpvar_44;
+    tmpvar_44 = (float((red_25 - 1)) / 30.0);
+    highp float tmpvar_45;
+    tmpvar_45 = (fract(abs(tmpvar_44)) * 30.0);
+    highp float tmpvar_46;
+    if ((tmpvar_44 >= 0.0)) {
+      tmpvar_46 = tmpvar_45;
+    } else {
+      tmpvar_46 = -(tmpvar_45);
+    };
+    int tmpvar_47;
+    tmpvar_47 = int(tmpvar_46);
+    red_25 = tmpvar_47;
+    highp vec2 tmpvar_48;
+    tmpvar_48.x = ((float(tmpvar_47) * notFloorDark_22) / 32.0);
+    tmpvar_48.y = ((float(
+      (tmpvar_43 + 3)
+    ) + 0.5) / 8.0);
+    lowp vec4 tmpvar_49;
+    tmpvar_49 = texture2D (_PalTex, tmpvar_48);
+    highp vec2 tmpvar_50;
+    tmpvar_50.x = ((float(tmpvar_47) * notFloorDark_22) / 32.0);
+    tmpvar_50.y = ((float(tmpvar_43) + 0.5) / 8.0);
+    lowp vec4 tmpvar_51;
+    tmpvar_51 = texture2D (_PalTex, tmpvar_50);
+    mediump vec4 tmpvar_52;
+    tmpvar_52 = mix (tmpvar_49, tmpvar_51, vec4(shadow_21));
+    setColor_6 = tmpvar_52;
+    highp vec2 tmpvar_53;
+    tmpvar_53 = (xlv_TEXCOORD0 * vec2(2.0, 2.0));
+    lowp vec4 tmpvar_54;
+    tmpvar_54 = texture2D (_NoiseTex, tmpvar_53);
+    highp float tmpvar_55;
+    tmpvar_55 = ((sin(
+      (6.28 * ((_RAIN + (tmpvar_54.x * 4.0)) + (float(tmpvar_47) / 12.0)))
+    ) * 0.5) + 0.5);
+    rbcol_20 = tmpvar_55;
+    mediump vec2 tmpvar_56;
+    tmpvar_56.y = 0.8125;
+    tmpvar_56.x = ((5.5 + (rbcol_20 * 25.0)) / 32.0);
+    lowp vec4 tmpvar_57;
+    tmpvar_57 = texture2D (_PalTex, tmpvar_56);
+    highp float tmpvar_58;
+    if ((green_24 >= 4)) {
+      tmpvar_58 = 0.2;
+    } else {
+      tmpvar_58 = 0.0;
+    };
+    highp vec4 tmpvar_59;
+    tmpvar_59 = mix (tmpvar_52, tmpvar_57, vec4((tmpvar_58 * _Grime)));
+    setColor_6 = tmpvar_59;
+    if ((effectCol_23 == 100)) {
+      mediump vec4 decalCol_60;
+      mediump vec2 tmpvar_61;
+      tmpvar_61.y = 0.999375;
+      tmpvar_61.x = ((255.5 - (texcol_3.z * 255.0)) / 1400.0);
+      lowp vec4 tmpvar_62;
+      tmpvar_62 = texture2D (_MainTex, tmpvar_61);
+      decalCol_60 = tmpvar_62;
+      if ((tmpvar_43 == 2)) {
+        decalCol_60 = mix (decalCol_60, vec4(1.0, 1.0, 1.0, 1.0), vec4((0.2 - (shadow_21 * 0.1))));
+      };
+      lowp vec4 tmpvar_63;
+      tmpvar_63 = texture2D (_PalTex, vec2(0.046875, 0.9375));
+      highp vec4 tmpvar_64;
+      tmpvar_64 = mix (decalCol_60, tmpvar_63, vec4((float(tmpvar_47) / 60.0)));
+      decalCol_60 = tmpvar_64;
+      mediump vec4 tmpvar_65;
+      tmpvar_65 = mix (setColor_6, decalCol_60, vec4(0.7, 0.7, 0.7, 0.7));
+      mediump float y_66;
+      y_66 = (0.3 + (0.4 * shadow_21));
+      highp vec4 tmpvar_67;
+      mediump vec4 y_68;
+      y_68 = ((setColor_6 * decalCol_60) * 1.5);
+      tmpvar_67 = mix (tmpvar_65, y_68, vec4(mix (0.9, y_66, clamp (
+        ((float(tmpvar_47) - 3.5) * 0.3)
+      , 0.0, 1.0))));
+      setColor_6 = tmpvar_67;
+    } else {
+      if (((green_24 > 0) && (green_24 < 3))) {
+        highp vec2 tmpvar_69;
+        tmpvar_69.x = 0.953125;
+        tmpvar_69.y = ((5.5 - float(
+          ((effectCol_23 - 1) * 2)
+        )) / 8.0);
+        lowp vec4 tmpvar_70;
+        tmpvar_70 = texture2D (_PalTex, tmpvar_69);
+        highp vec2 tmpvar_71;
+        tmpvar_71.x = 0.984375;
+        tmpvar_71.y = ((5.5 - float(
+          ((effectCol_23 - 1) * 2)
+        )) / 8.0);
+        lowp vec4 tmpvar_72;
+        tmpvar_72 = texture2D (_PalTex, tmpvar_71);
+        mediump vec4 tmpvar_73;
+        tmpvar_73 = mix (tmpvar_70, tmpvar_72, vec4(shadow_21));
+        highp vec2 tmpvar_74;
+        tmpvar_74.x = 0.953125;
+        tmpvar_74.y = ((4.5 - float(
+          ((effectCol_23 - 1) * 2)
+        )) / 8.0);
+        lowp vec4 tmpvar_75;
+        tmpvar_75 = texture2D (_PalTex, tmpvar_74);
+        highp vec2 tmpvar_76;
+        tmpvar_76.x = 0.984375;
+        tmpvar_76.y = ((4.5 - float(
+          ((effectCol_23 - 1) * 2)
+        )) / 8.0);
+        lowp vec4 tmpvar_77;
+        tmpvar_77 = texture2D (_PalTex, tmpvar_76);
+        mediump vec4 tmpvar_78;
+        tmpvar_78 = mix (tmpvar_75, tmpvar_77, vec4(shadow_21));
+        highp vec4 tmpvar_79;
+        tmpvar_79 = mix (setColor_6, mix (tmpvar_73, tmpvar_78, vec4((
+          float(tmpvar_47)
+         / 30.0))), texcol_3.zzzz);
+        setColor_6 = tmpvar_79;
+      } else {
+        if ((green_24 == 3)) {
+          highp vec4 tmpvar_80;
+          tmpvar_80 = mix (setColor_6, vec4(1.0, 1.0, 1.0, 1.0), vec4((texcol_3.z * _SwarmRoom)));
+          setColor_6 = tmpvar_80;
+        };
+      };
+    };
+    lowp vec4 tmpvar_81;
+    tmpvar_81 = texture2D (_PalTex, vec2(0.046875, 0.9375));
+    mediump float tmpvar_82;
+    if ((tmpvar_47 < 10)) {
+      tmpvar_82 = mix (notFloorDark_22, 1.0, 0.5);
+    } else {
+      tmpvar_82 = 1.0;
+    };
+    highp vec4 tmpvar_83;
+    tmpvar_83 = mix (setColor_6, tmpvar_81, vec4(clamp ((
+      ((float(tmpvar_47) * tmpvar_82) * _fogAmount)
+     / 30.0), 0.0, 1.0)));
+    setColor_6 = tmpvar_83;
+  };
+  setColor_6.xyz = (setColor_6.xyz * xlv_COLOR.x);
+  mediump float tmpvar_84;
+  tmpvar_84 = (((setColor_6.x * 0.2126) + (setColor_6.y * 0.7152)) + (setColor_6.z * 0.0722));
+  lum_2 = tmpvar_84;
+  lowp float tmpvar_85;
+  tmpvar_85 = (xlv_COLOR.y * 0.9);
+  t_1 = tmpvar_85;
+  highp vec3 tmpvar_86;
+  tmpvar_86 = (setColor_6.xyz / ((1.0 - t_1) + (lum_2 * t_1)));
+  setColor_6.xyz = tmpvar_86;
+  setColor_6.w = (setColor_6.w * xlv_COLOR.w);
+  gl_FragData[0] = setColor_6;
+}
+
+
+
+#endif"
+}
+SubProgram "gles3 " {
+// Stats: 234 math, 16 textures, 17 branches
+"!!GLES3#version 300 es
+
+
+#ifdef VERTEX
+
+
+in vec4 _glesVertex;
+in vec4 _glesColor;
+in vec4 _glesMultiTexCoord0;
+uniform highp mat4 glstate_matrix_mvp;
+uniform highp vec4 _MainTex_ST;
+out highp vec2 xlv_TEXCOORD0;
+out lowp vec4 xlv_COLOR;
+void main ()
+{
+  gl_Position = (glstate_matrix_mvp * _glesVertex);
+  xlv_TEXCOORD0 = ((_glesMultiTexCoord0.xy * _MainTex_ST.xy) + _MainTex_ST.zw);
+  xlv_COLOR = _glesColor;
+}
+
+
+
+#endif
+#ifdef FRAGMENT
+
+
+layout(location=0) out mediump vec4 _glesFragData[4];
+uniform sampler2D _MainTex;
+uniform sampler2D _PalTex;
+uniform sampler2D _NoiseTex;
+uniform highp float _RAIN;
+uniform highp float _light;
+uniform highp vec4 _spriteRect;
+uniform highp float _fogAmount;
+uniform highp float _waterLevel;
+uniform highp float _Grime;
+uniform highp float _SwarmRoom;
+uniform highp float _WetTerrain;
+uniform highp float _cloudsSpeed;
+in highp vec2 xlv_TEXCOORD0;
+in lowp vec4 xlv_COLOR;
+void main ()
+{
+  highp float t_1;
+  highp float lum_2;
+  mediump vec4 texcol_3;
+  mediump vec2 screenPos_4;
+  highp float displace_5;
+  mediump vec4 setColor_6;
+  setColor_6 = vec4(0.0, 0.0, 0.0, 1.0);
+  lowp float tmpvar_7;
+  tmpvar_7 = ((texture (_MainTex, xlv_TEXCOORD0).x * 255.0) / 90.0);
+  lowp float tmpvar_8;
+  tmpvar_8 = (fract(abs(tmpvar_7)) * 90.0);
+  lowp float tmpvar_9;
+  if ((tmpvar_7 >= 0.0)) {
+    tmpvar_9 = tmpvar_8;
+  } else {
+    tmpvar_9 = -(tmpvar_8);
+  };
+  lowp float tmpvar_10;
+  tmpvar_10 = ((tmpvar_9 - 1.0) / 30.0);
+  lowp float tmpvar_11;
+  tmpvar_11 = (fract(abs(tmpvar_10)) * 30.0);
+  lowp float tmpvar_12;
+  if ((tmpvar_10 >= 0.0)) {
+    tmpvar_12 = tmpvar_11;
+  } else {
+    tmpvar_12 = -(tmpvar_11);
+  };
+  highp float tmpvar_13;
+  tmpvar_13 = (tmpvar_12 / 300.0);
+  highp vec2 tmpvar_14;
+  tmpvar_14.x = (((xlv_TEXCOORD0.x * 1.5) - tmpvar_13) + (_RAIN * 0.01));
+  tmpvar_14.y = (((xlv_TEXCOORD0.y * 0.25) - tmpvar_13) + (_RAIN * 0.05));
+  lowp float tmpvar_15;
+  tmpvar_15 = texture (_NoiseTex, tmpvar_14).x;
+  displace_5 = tmpvar_15;
+  displace_5 = clamp (((
+    sin((9.42 * ((
+      (displace_5 + xlv_TEXCOORD0.x)
+     + xlv_TEXCOORD0.y) + (_RAIN * 0.1))))
+   - 0.95) * 20.0), 0.0, 1.0);
+  highp vec2 tmpvar_16;
+  tmpvar_16.x = mix (_spriteRect.x, _spriteRect.z, xlv_TEXCOORD0.x);
+  tmpvar_16.y = mix (_spriteRect.y, _spriteRect.w, xlv_TEXCOORD0.y);
+  screenPos_4 = tmpvar_16;
+  if (((_WetTerrain < 0.5) || ((1.0 - screenPos_4.y) > _waterLevel))) {
+    displace_5 = 0.0;
+  };
+  highp vec2 tmpvar_17;
+  tmpvar_17.x = xlv_TEXCOORD0.x;
+  tmpvar_17.y = (xlv_TEXCOORD0.y + (displace_5 * 0.001));
+  lowp vec4 tmpvar_18;
+  tmpvar_18 = texture (_MainTex, tmpvar_17);
+  texcol_3 = tmpvar_18;
+  if ((((texcol_3.x == 1.0) && (texcol_3.y == 1.0)) && (texcol_3.z == 1.0))) {
+    lowp vec4 tmpvar_19;
+    tmpvar_19 = texture (_PalTex, vec2(0.015625, 0.9375));
+    setColor_6 = tmpvar_19;
+  } else {
+    mediump float rbcol_20;
+    mediump float shadow_21;
+    mediump float notFloorDark_22;
+    int effectCol_23;
+    int green_24;
+    int red_25;
+    int tmpvar_26;
+    tmpvar_26 = int((texcol_3.x * 255.0));
+    red_25 = tmpvar_26;
+    int tmpvar_27;
+    tmpvar_27 = int((texcol_3.y * 255.0));
+    green_24 = tmpvar_27;
+    effectCol_23 = 0;
+    notFloorDark_22 = 1.0;
+    if ((green_24 >= 16)) {
+      notFloorDark_22 = 0.0;
+      green_24 = (green_24 - 16);
+    };
+    if ((green_24 >= 8)) {
+      effectCol_23 = 100;
+      green_24 = (green_24 - 8);
+    } else {
+      effectCol_23 = green_24;
+    };
+    highp float tmpvar_28;
+    tmpvar_28 = (float(red_25) / 30.0);
+    highp float tmpvar_29;
+    tmpvar_29 = (fract(abs(tmpvar_28)) * 30.0);
+    highp float tmpvar_30;
+    if ((tmpvar_28 >= 0.0)) {
+      tmpvar_30 = tmpvar_29;
+    } else {
+      tmpvar_30 = -(tmpvar_29);
+    };
+    highp float tmpvar_31;
+    tmpvar_31 = (float(red_25) / 30.0);
+    highp float tmpvar_32;
+    tmpvar_32 = (fract(abs(tmpvar_31)) * 30.0);
+    highp float tmpvar_33;
+    if ((tmpvar_31 >= 0.0)) {
+      tmpvar_33 = tmpvar_32;
+    } else {
+      tmpvar_33 = -(tmpvar_32);
+    };
+    highp vec2 tmpvar_34;
+    highp float cse_35;
+    cse_35 = (_RAIN * 0.1);
+    tmpvar_34.x = (((xlv_TEXCOORD0.x * 0.5) + (cse_35 * _cloudsSpeed)) - (0.003 * tmpvar_30));
+    tmpvar_34.y = (((1.0 - 
+      (xlv_TEXCOORD0.y * 0.5)
+    ) + (
+      (_RAIN * 0.2)
+     * _cloudsSpeed)) - (0.003 * tmpvar_33));
+    lowp float tmpvar_36;
+    tmpvar_36 = texture (_NoiseTex, tmpvar_34).x;
+    shadow_21 = tmpvar_36;
+    highp float tmpvar_37;
+    tmpvar_37 = ((shadow_21 + (cse_35 * _cloudsSpeed)) - xlv_TEXCOORD0.y);
+    highp float tmpvar_38;
+    tmpvar_38 = fract(abs(tmpvar_37));
+    highp float tmpvar_39;
+    if ((tmpvar_37 >= 0.0)) {
+      tmpvar_39 = tmpvar_38;
+    } else {
+      tmpvar_39 = -(tmpvar_38);
+    };
+    highp float tmpvar_40;
+    tmpvar_40 = sin((6.28 * tmpvar_39));
+    mediump float tmpvar_41;
+    tmpvar_41 = (0.5 + (tmpvar_40 * 0.5));
+    highp float tmpvar_42;
+    tmpvar_42 = clamp (((
+      ((tmpvar_41 - 0.5) * 6.0)
+     + 0.5) - (_light * 4.0)), 0.0, 1.0);
+    shadow_21 = tmpvar_42;
+    if ((red_25 > 90)) {
+      red_25 = (red_25 - 90);
+    } else {
+      shadow_21 = 1.0;
+    };
+    int tmpvar_43;
+    tmpvar_43 = int(clamp (floor(
+      (float((red_25 - 1)) / 30.0)
+    ), 0.0, 2.0));
+    highp float tmpvar_44;
+    tmpvar_44 = (float((red_25 - 1)) / 30.0);
+    highp float tmpvar_45;
+    tmpvar_45 = (fract(abs(tmpvar_44)) * 30.0);
+    highp float tmpvar_46;
+    if ((tmpvar_44 >= 0.0)) {
+      tmpvar_46 = tmpvar_45;
+    } else {
+      tmpvar_46 = -(tmpvar_45);
+    };
+    int tmpvar_47;
+    tmpvar_47 = int(tmpvar_46);
+    red_25 = tmpvar_47;
+    highp vec2 tmpvar_48;
+    tmpvar_48.x = ((float(tmpvar_47) * notFloorDark_22) / 32.0);
+    tmpvar_48.y = ((float(
+      (tmpvar_43 + 3)
+    ) + 0.5) / 8.0);
+    lowp vec4 tmpvar_49;
+    tmpvar_49 = texture (_PalTex, tmpvar_48);
+    highp vec2 tmpvar_50;
+    tmpvar_50.x = ((float(tmpvar_47) * notFloorDark_22) / 32.0);
+    tmpvar_50.y = ((float(tmpvar_43) + 0.5) / 8.0);
+    lowp vec4 tmpvar_51;
+    tmpvar_51 = texture (_PalTex, tmpvar_50);
+    mediump vec4 tmpvar_52;
+    tmpvar_52 = mix (tmpvar_49, tmpvar_51, vec4(shadow_21));
+    setColor_6 = tmpvar_52;
+    highp vec2 tmpvar_53;
+    tmpvar_53 = (xlv_TEXCOORD0 * vec2(2.0, 2.0));
+    lowp vec4 tmpvar_54;
+    tmpvar_54 = texture (_NoiseTex, tmpvar_53);
+    highp float tmpvar_55;
+    tmpvar_55 = ((sin(
+      (6.28 * ((_RAIN + (tmpvar_54.x * 4.0)) + (float(tmpvar_47) / 12.0)))
+    ) * 0.5) + 0.5);
+    rbcol_20 = tmpvar_55;
+    mediump vec2 tmpvar_56;
+    tmpvar_56.y = 0.8125;
+    tmpvar_56.x = ((5.5 + (rbcol_20 * 25.0)) / 32.0);
+    lowp vec4 tmpvar_57;
+    tmpvar_57 = texture (_PalTex, tmpvar_56);
+    highp float tmpvar_58;
+    if ((green_24 >= 4)) {
+      tmpvar_58 = 0.2;
+    } else {
+      tmpvar_58 = 0.0;
+    };
+    highp vec4 tmpvar_59;
+    tmpvar_59 = mix (tmpvar_52, tmpvar_57, vec4((tmpvar_58 * _Grime)));
+    setColor_6 = tmpvar_59;
+    if ((effectCol_23 == 100)) {
+      mediump vec4 decalCol_60;
+      mediump vec2 tmpvar_61;
+      tmpvar_61.y = 0.999375;
+      tmpvar_61.x = ((255.5 - (texcol_3.z * 255.0)) / 1400.0);
+      lowp vec4 tmpvar_62;
+      tmpvar_62 = texture (_MainTex, tmpvar_61);
+      decalCol_60 = tmpvar_62;
+      if ((tmpvar_43 == 2)) {
+        decalCol_60 = mix (decalCol_60, vec4(1.0, 1.0, 1.0, 1.0), vec4((0.2 - (shadow_21 * 0.1))));
+      };
+      lowp vec4 tmpvar_63;
+      tmpvar_63 = texture (_PalTex, vec2(0.046875, 0.9375));
+      highp vec4 tmpvar_64;
+      tmpvar_64 = mix (decalCol_60, tmpvar_63, vec4((float(tmpvar_47) / 60.0)));
+      decalCol_60 = tmpvar_64;
+      mediump vec4 tmpvar_65;
+      tmpvar_65 = mix (setColor_6, decalCol_60, vec4(0.7, 0.7, 0.7, 0.7));
+      mediump float y_66;
+      y_66 = (0.3 + (0.4 * shadow_21));
+      highp vec4 tmpvar_67;
+      mediump vec4 y_68;
+      y_68 = ((setColor_6 * decalCol_60) * 1.5);
+      tmpvar_67 = mix (tmpvar_65, y_68, vec4(mix (0.9, y_66, clamp (
+        ((float(tmpvar_47) - 3.5) * 0.3)
+      , 0.0, 1.0))));
+      setColor_6 = tmpvar_67;
+    } else {
+      if (((green_24 > 0) && (green_24 < 3))) {
+        highp vec2 tmpvar_69;
+        tmpvar_69.x = 0.953125;
+        tmpvar_69.y = ((5.5 - float(
+          ((effectCol_23 - 1) * 2)
+        )) / 8.0);
+        lowp vec4 tmpvar_70;
+        tmpvar_70 = texture (_PalTex, tmpvar_69);
+        highp vec2 tmpvar_71;
+        tmpvar_71.x = 0.984375;
+        tmpvar_71.y = ((5.5 - float(
+          ((effectCol_23 - 1) * 2)
+        )) / 8.0);
+        lowp vec4 tmpvar_72;
+        tmpvar_72 = texture (_PalTex, tmpvar_71);
+        mediump vec4 tmpvar_73;
+        tmpvar_73 = mix (tmpvar_70, tmpvar_72, vec4(shadow_21));
+        highp vec2 tmpvar_74;
+        tmpvar_74.x = 0.953125;
+        tmpvar_74.y = ((4.5 - float(
+          ((effectCol_23 - 1) * 2)
+        )) / 8.0);
+        lowp vec4 tmpvar_75;
+        tmpvar_75 = texture (_PalTex, tmpvar_74);
+        highp vec2 tmpvar_76;
+        tmpvar_76.x = 0.984375;
+        tmpvar_76.y = ((4.5 - float(
+          ((effectCol_23 - 1) * 2)
+        )) / 8.0);
+        lowp vec4 tmpvar_77;
+        tmpvar_77 = texture (_PalTex, tmpvar_76);
+        mediump vec4 tmpvar_78;
+        tmpvar_78 = mix (tmpvar_75, tmpvar_77, vec4(shadow_21));
+        highp vec4 tmpvar_79;
+        tmpvar_79 = mix (setColor_6, mix (tmpvar_73, tmpvar_78, vec4((
+          float(tmpvar_47)
+         / 30.0))), texcol_3.zzzz);
+        setColor_6 = tmpvar_79;
+      } else {
+        if ((green_24 == 3)) {
+          highp vec4 tmpvar_80;
+          tmpvar_80 = mix (setColor_6, vec4(1.0, 1.0, 1.0, 1.0), vec4((texcol_3.z * _SwarmRoom)));
+          setColor_6 = tmpvar_80;
+        };
+      };
+    };
+    lowp vec4 tmpvar_81;
+    tmpvar_81 = texture (_PalTex, vec2(0.046875, 0.9375));
+    mediump float tmpvar_82;
+    if ((tmpvar_47 < 10)) {
+      tmpvar_82 = mix (notFloorDark_22, 1.0, 0.5);
+    } else {
+      tmpvar_82 = 1.0;
+    };
+    highp vec4 tmpvar_83;
+    tmpvar_83 = mix (setColor_6, tmpvar_81, vec4(clamp ((
+      ((float(tmpvar_47) * tmpvar_82) * _fogAmount)
+     / 30.0), 0.0, 1.0)));
+    setColor_6 = tmpvar_83;
+  };
+  setColor_6.xyz = (setColor_6.xyz * xlv_COLOR.x);
+  mediump float tmpvar_84;
+  tmpvar_84 = (((setColor_6.x * 0.2126) + (setColor_6.y * 0.7152)) + (setColor_6.z * 0.0722));
+  lum_2 = tmpvar_84;
+  lowp float tmpvar_85;
+  tmpvar_85 = (xlv_COLOR.y * 0.9);
+  t_1 = tmpvar_85;
+  highp vec3 tmpvar_86;
+  tmpvar_86 = (setColor_6.xyz / ((1.0 - t_1) + (lum_2 * t_1)));
+  setColor_6.xyz = tmpvar_86;
+  setColor_6.w = (setColor_6.w * xlv_COLOR.w);
+  _glesFragData[0] = setColor_6;
+}
+
+
+
+#endif"
+}
+SubProgram "metal " {
+// Stats: 3 math
+Bind "vertex" ATTR0
+Bind "color" ATTR1
+Bind "texcoord" ATTR2
+ConstBuffer "$Globals" 80
+Matrix 0 [glstate_matrix_mvp]
+Vector 64 [_MainTex_ST]
+"metal_vs
+#include <metal_stdlib>
+using namespace metal;
+struct xlatMtlShaderInput {
+  float4 _glesVertex [[attribute(0)]];
+  float4 _glesColor [[attribute(1)]];
+  float4 _glesMultiTexCoord0 [[attribute(2)]];
+};
+struct xlatMtlShaderOutput {
+  float4 gl_Position [[position]];
+  float2 xlv_TEXCOORD0;
+  half4 xlv_COLOR;
+};
+struct xlatMtlShaderUniform {
+  float4x4 glstate_matrix_mvp;
+  float4 _MainTex_ST;
+};
+vertex xlatMtlShaderOutput xlatMtlMain (xlatMtlShaderInput _mtl_i [[stage_in]], constant xlatMtlShaderUniform& _mtl_u [[buffer(0)]])
+{
+  xlatMtlShaderOutput _mtl_o;
+  half4 tmpvar_1;
+  tmpvar_1 = half4(_mtl_i._glesColor);
+  _mtl_o.gl_Position = (_mtl_u.glstate_matrix_mvp * _mtl_i._glesVertex);
+  _mtl_o.xlv_TEXCOORD0 = ((_mtl_i._glesMultiTexCoord0.xy * _mtl_u._MainTex_ST.xy) + _mtl_u._MainTex_ST.zw);
+  _mtl_o.xlv_COLOR = tmpvar_1;
+  return _mtl_o;
+}
+
+"
+}
+}
+Program "fp" {
+SubProgram "opengl " {
+// Stats: 253 math, 15 textures
+Float 0 [_RAIN]
+Float 1 [_light]
+Vector 2 [_spriteRect]
+Float 3 [_fogAmount]
+Float 4 [_waterLevel]
+Float 5 [_Grime]
+Float 6 [_SwarmRoom]
+Float 7 [_WetTerrain]
+Float 8 [_cloudsSpeed]
+SetTexture 0 [_MainTex] 2D 0
+SetTexture 1 [_NoiseTex] 2D 1
+SetTexture 2 [_PalTex] 2D 2
+"3.0-!!ARBfp1.0
+PARAM c[25] = { program.local[0..8],
+		{ 2, 0.5, 1, 0 },
+		{ 0.1, 0.0099999998, 1.5, 255 },
+		{ 0.011111111, 90, 0.033333335, 30 },
+		{ 0.0033333334, 0.050000001, 0.25, 0.94999999 },
+		{ 9.4200001, 0, 20, 0.001 },
+		{ 10, 16, 0.046875, 0.9375 },
+		{ 8, 100, 3, 4 },
+		{ 0.003, 0.2, 6.2800002, 0 },
+		{ 6, 0.984375, 4.5, 0.125 },
+		{ 0.953125, 5.5, 3.5, 0.30000001 },
+		{ 0.39990234, -0.59985352, 0, 0.89990234 },
+		{ 0.083333336, 25, 0.03125, 0.8125 },
+		{ 3.5, 0, 0.015625, 0.9375 },
+		{ 0.016666668, 0.099975586, 0.19995117, 255.5 },
+		{ 0.00071428571, 0.99937499, 0.70019531, 0.07220459 },
+		{ 0.21264648, 0.71533203 } };
+TEMP R0;
+TEMP R1;
+TEMP R2;
+TEMP R3;
+TEMP R4;
+TEMP R5;
+TEMP R6;
+TEMP R7;
+TEMP R8;
+TEMP R9;
+TEX R0.x, fragment.texcoord[0], texture[0], 2D;
+MUL R0.x, R0, c[10].w;
+MUL R0.y, R0.x, c[11].x;
+ABS R0.y, R0;
+FRC R0.y, R0;
+MUL R0.y, R0, c[11];
+CMP R0.x, R0, -R0.y, R0.y;
+ADD R0.x, R0, -c[9].z;
+MUL R0.y, R0.x, c[11].z;
+ABS R0.y, R0;
+FRC R0.y, R0;
+MUL R0.y, R0, c[11].w;
+CMP R0.x, R0, -R0.y, R0.y;
+MUL R0.z, R0.x, c[12].x;
+MUL R3.xy, fragment.texcoord[0], c[9].x;
+MAD R0.y, fragment.texcoord[0], c[12].z, -R0.z;
+MOV R0.x, c[12].y;
+MAD R0.y, R0.x, c[0].x, R0;
+MAD R0.x, fragment.texcoord[0], c[10].z, -R0.z;
+MOV R0.zw, c[10].xyxy;
+MAD R0.x, R0.w, c[0], R0;
+TEX R0.x, R0, texture[1], 2D;
+ADD R0.x, fragment.texcoord[0], R0;
+ADD R0.x, fragment.texcoord[0].y, R0;
+MAD R0.x, R0.z, c[0], R0;
+MUL R0.x, R0, c[13];
+SIN R0.y, R0.x;
+ADD R0.y, R0, -c[12].w;
+ADD R0.x, c[2].w, -c[2].y;
+MUL_SAT R0.z, R0.y, c[13];
+MAD R0.x, fragment.texcoord[0].y, R0, c[2].y;
+ADD R0.y, -R0.x, c[9].z;
+MOV R0.x, c[9].y;
+SLT R0.y, c[4].x, R0;
+SLT R0.x, c[7], R0;
+ADD_SAT R0.x, R0, R0.y;
+CMP R0.x, -R0, c[9].w, R0.z;
+MAD R0.y, R0.x, c[13].w, fragment.texcoord[0];
+MOV R0.x, fragment.texcoord[0];
+TEX R8.xyz, R0, texture[0], 2D;
+MUL R0.z, R8.x, c[10].w;
+MUL R1.x, R8.y, c[10].w;
+ADD R0.x, R8.z, -c[9].z;
+ABS R0.y, R0.x;
+ABS R0.w, R0.z;
+SLT R0.x, R0.z, c[9].w;
+FLR R0.w, R0;
+CMP R0.x, -R0, -R0.w, R0.w;
+CMP R0.w, -R0.y, c[9], c[9].z;
+ADD R0.z, R8.y, -c[9];
+ADD R0.y, R8.x, -c[9].z;
+ABS R1.y, R1.x;
+ABS R0.z, R0;
+ABS R0.y, R0;
+SLT R2.x, c[11].y, R0;
+CMP R0.z, -R0, c[9].w, c[9];
+CMP R0.y, -R0, c[9].w, c[9].z;
+MUL R0.y, R0, R0.z;
+MUL R0.y, R0, R0.w;
+ABS R0.y, R0;
+CMP R8.x, -R0.y, c[9].w, c[9].z;
+MUL R0.y, R8.x, R2.x;
+ADD R0.z, R0.x, -c[11].y;
+CMP R0.y, -R0, R0.z, R0.x;
+ADD R0.y, R0, -c[9].z;
+MUL R0.z, R0.y, c[11];
+ABS R0.w, R0.z;
+FRC R0.w, R0;
+MUL R0.w, R0, c[11];
+CMP R0.y, R0, -R0.w, R0.w;
+SLT R0.w, R1.x, c[9];
+FLR R1.y, R1;
+CMP R3.z, -R0.w, -R1.y, R1.y;
+SLT R0.w, R0.y, c[9];
+SGE R1.x, R3.z, c[14].y;
+MUL R3.w, R8.x, R1.x;
+ABS R0.y, R0;
+FLR R0.y, R0;
+CMP R8.y, -R0.w, -R0, R0;
+CMP R8.w, -R3, c[9], c[9].z;
+FLR R0.w, R0.z;
+MUL R0.y, R8, R8.w;
+MUL R0.z, R0.y, c[20];
+MIN R0.y, R0.w, c[9].x;
+MAX R1.w, R0.y, c[9];
+MUL R0.y, R0.x, c[11].z;
+ABS R0.w, R0.y;
+MOV R0.y, c[8].x;
+MUL R1.y, R0, c[0].x;
+FRC R0.w, R0;
+MUL R0.y, R0.w, c[11].w;
+CMP R0.x, R0, -R0.y, R0.y;
+MUL R0.w, R1.y, c[16].y;
+MAD R0.w, -fragment.texcoord[0].y, c[9].y, R0;
+MAD R1.z, -R0.x, c[16].x, R0.w;
+MUL R0.y, R1, c[10].x;
+MAD R0.w, fragment.texcoord[0].x, c[9].y, R0.y;
+ABS R2.y, R1.w;
+MAD R0.x, -R0, c[16], R0.w;
+ADD R0.y, R1.z, c[9].z;
+TEX R0.x, R0, texture[1], 2D;
+MAD R0.x, R1.y, c[10], R0;
+FLR R0.w, R2.y;
+SLT R0.y, R1.w, c[9].w;
+CMP R4.x, -R0.y, -R0.w, R0.w;
+ADD R0.y, R4.x, c[9];
+ADD R0.w, R4.x, c[21].x;
+ADD R4.z, R4.x, -c[9].x;
+MOV R1.x, R0.z;
+MUL R1.y, R0, c[17].w;
+ADD R0.x, -fragment.texcoord[0].y, R0;
+ABS R0.y, R0.x;
+FRC R0.y, R0;
+CMP R0.x, R0, -R0.y, R0.y;
+MUL R2.y, R0.x, c[16].z;
+SIN R2.y, R2.y;
+MUL R2.z, R2.y, c[9].y;
+MOV R2.y, c[9];
+MUL R0.w, R0, c[17];
+TEX R0, R0.zwzw, texture[2], 2D;
+TEX R1, R1, texture[2], 2D;
+ADD R1, R1, -R0;
+MAD R2.z, R2, c[17].x, R2.y;
+ABS R2.x, R2;
+CMP R2.y, -R2.x, c[9].w, c[9].z;
+MOV R2.x, c[15].w;
+MAD_SAT R2.z, R2.x, -c[1].x, R2;
+MUL R2.x, R8, R2.y;
+CMP R9.w, -R2.x, c[9].z, R2.z;
+MAD R2, R9.w, R1, R0;
+TEX R0.x, R3, texture[1], 2D;
+MUL R0.x, R0, c[15].w;
+ADD R0.y, R0.x, c[0].x;
+ADD R0.x, R3.z, -c[14].y;
+CMP R0.x, -R3.w, R0, R3.z;
+MAD R0.y, R8, c[20].x, R0;
+TEX R1, c[21].zwzw, texture[2], 2D;
+CMP R1, -R8.x, R2, R1;
+SGE R2.x, R0, c[15];
+MUL R0.w, R0.y, c[16].z;
+ADD R0.z, R0.x, -c[15].x;
+MUL R0.y, R8.x, R2.x;
+CMP R9.x, -R0.y, R0.z, R0;
+ABS R3.x, R2;
+MOV R0.x, c[16].y;
+ADD R0.y, R9.x, -c[15].w;
+CMP R2.y, R0, c[9].w, R0.x;
+SIN R0.y, R0.w;
+MAD R0.y, R0, c[9], c[9];
+MOV R0.x, c[18].y;
+MAD R0.x, R0.y, c[20].y, R0;
+MAD R4.y, -R9.w, c[22], c[22].z;
+MUL R5.x, R8.y, c[22];
+MOV R0.y, c[20].w;
+MUL R0.x, R0, c[20].z;
+TEX R0, R0, texture[2], 2D;
+ADD R0, R0, -R1;
+MUL R2.y, R2, c[5].x;
+MAD R2, R2.y, R0, R1;
+CMP R0.y, -R3.x, c[9].w, c[9].z;
+MUL R3.x, R8, R0.y;
+MOV R0.x, c[22].w;
+MAD R0.x, -R8.z, c[10].w, R0;
+CMP R7.x, -R3, R9, c[15].y;
+MOV R0.y, c[23];
+MUL R0.x, R0, c[23];
+TEX R0, R0, texture[0], 2D;
+ADD R3, -R0, c[9].z;
+MAD R3, R4.y, R3, R0;
+ADD R4.y, R7.x, -c[15];
+ABS R4.x, R4.y;
+CMP R9.y, -R4.x, c[9].w, c[9].z;
+ABS R4.y, R4.z;
+CMP R4.x, -R4.y, c[9].w, c[9].z;
+MUL R9.z, R8.x, R9.y;
+MUL R4.x, R9.z, R4;
+CMP R0, -R4.x, R3, R0;
+TEX R3, c[14].zwzw, texture[2], 2D;
+ADD R4, R3, -R0;
+MAD R0, R5.x, R4, R0;
+CMP R5, -R8.x, R2, R1;
+ADD R1, -R5, R0;
+MAD R6, R1, c[23].z, R5;
+ADD R1.x, R7, -c[9].z;
+MUL R0, R5, R0;
+MAD R7, R0, c[10].z, -R6;
+MUL R1.x, -R1, c[9];
+ADD R0.x, R1, c[18].y;
+MUL R0.y, R0.x, c[17].w;
+MOV R0.x, c[18];
+TEX R2, R0, texture[2], 2D;
+MOV R0.x, c[17].y;
+TEX R0, R0, texture[2], 2D;
+ADD R4, R0, -R2;
+MAD R2, R9.w, R4, R2;
+ADD R1.x, R1, c[17].z;
+MUL R0.y, R1.x, c[17].w;
+MOV R0.x, c[18];
+TEX R1, R0, texture[2], 2D;
+MOV R0.x, c[17].y;
+TEX R0, R0, texture[2], 2D;
+ADD R0, R0, -R1;
+MAD R0, R9.w, R0, R1;
+ADD R0, R0, -R2;
+ADD R1.x, R8.y, -c[18].z;
+MUL R0, R8.y, R0;
+MAD R0, R0, c[11].z, R2;
+ABS R2.x, R9.y;
+CMP R2.x, -R2, c[9].w, c[9].z;
+MAD R1.y, R9.w, c[19].x, c[19];
+MUL_SAT R1.x, R1, c[18].w;
+MAD R1.x, R1, R1.y, c[19].w;
+MAD R1, R1.x, R7, R6;
+CMP R1, -R9.z, R1, R5;
+ADD R0, R0, -R1;
+MAD R0, R8.z, R0, R1;
+SLT R2.z, R9.x, c[15];
+SLT R2.y, c[9].w, R9.x;
+MUL R2.w, R2.y, R2.z;
+MUL R2.x, R8, R2;
+MUL R2.y, R2.x, R2.w;
+CMP R0, -R2.y, R0, R1;
+ADD R2.y, -R8.w, c[9].z;
+MAD R2.z, R2.y, c[9].y, R8.w;
+ADD R2.y, R8, -c[14].x;
+CMP R2.y, R2, R2.z, c[9].z;
+ADD R1, -R0, c[9].z;
+MUL R2.z, R8, c[6].x;
+MAD R1, R2.z, R1, R0;
+ABS R2.z, R2.w;
+CMP R2.z, -R2, c[9].w, c[9];
+ADD R4.x, R9, -c[15].z;
+ABS R2.w, R4.x;
+MUL R2.x, R2, R2.z;
+CMP R2.w, -R2, c[9], c[9].z;
+MUL R2.x, R2, R2.w;
+CMP R0, -R2.x, R1, R0;
+MUL R2.y, R8, R2;
+MUL R1.x, R2.y, c[3];
+ADD R2, -R0, R3;
+MUL_SAT R1.x, R1, c[11].z;
+MAD R1, R1.x, R2, R0;
+CMP R0, -R8.x, R1, R0;
+MUL R0, R0, fragment.color.primary.xxxw;
+MUL R1.x, R0.y, c[24].y;
+MAD R1.x, R0, c[24], R1;
+MUL R1.y, fragment.color.primary, c[19].w;
+MAD R1.x, R0.z, c[23].w, R1;
+MAD R1.x, R1, R1.y, -R1.y;
+ADD R1.x, R1, c[9].z;
+RCP R1.x, R1.x;
+MUL result.color.xyz, R0, R1.x;
+MOV result.color.w, R0;
+END
+# 253 instructions, 10 R-regs
+"
+}
+SubProgram "d3d9 " {
+// Stats: 240 math, 16 textures, 6 branches
+Float 0 [_RAIN]
+Float 1 [_light]
+Vector 2 [_spriteRect]
+Float 3 [_fogAmount]
+Float 4 [_waterLevel]
+Float 5 [_Grime]
+Float 6 [_SwarmRoom]
+Float 7 [_WetTerrain]
+Float 8 [_cloudsSpeed]
+SetTexture 0 [_MainTex] 2D 0
+SetTexture 1 [_NoiseTex] 2D 1
+SetTexture 2 [_PalTex] 2D 2
+"ps_3_0
+dcl_2d s0
+dcl_2d s1
+dcl_2d s2
+def c9, 255.00000000, 0.01111111, 90.00000000, -1.00000000
+def c10, 0.03333334, 30.00000000, 0.00333333, -0.50000000
+def c11, 0.00000000, 1.00000000, 1.50000000, 0.01000000
+def c12, 0.25000000, 0.05000000, 0.10000000, -0.94999999
+def c13, 1.49923921, 0.50000000, 6.28318501, -3.14159298
+def c14, 20.00000000, 0.00100000, 0.01562500, 0.93750000
+def c15, -90.00000000, -16.00000000, -8.00000000, 100.00000000
+def c16, 0.00300000, 0.20000000, 0.00000000, 4.00000000
+def c17, 0.99949282, 0.50000000, 6.00000000, 2.00000000
+def c18, -4.00000000, 0.08333334, 25.00000000, 5.50000000
+def c19, 0.03125000, 0.81250000, 0.12500000, 3.50000000
+def c20, -3.50000000, 0.30000001, 0.39990234, -0.59985352
+def c21, 0.89990234, 0.01666667, 0.04687500, 0.93750000
+def c22, -2.00000000, 0.09997559, 0.19995117, 0.00071429
+def c23, 255.00000000, 255.50000000, 0.99937499, 0.70019531
+def c24, -3.00000000, 2.00000000, 4.50000000, 0.98437500
+def c25, 0.95312500, 2.00000000, 5.50000000, -10.00000000
+def c26, 0.71533203, 0.21264648, 0.07220459, 0
+dcl_texcoord0 v0.xy
+dcl_color0 v1.xyzw
+texld r0.x, v0, s0
+mul r0.x, r0, c9
+mul r0.y, r0.x, c9
+abs r0.y, r0
+frc r0.y, r0
+mul r0.y, r0, c9.z
+cmp r0.x, r0, r0.y, -r0.y
+add r0.x, r0, c9.w
+mul r0.y, r0.x, c10.x
+abs r0.y, r0
+frc r0.y, r0
+mul r0.y, r0, c10
+cmp r0.x, r0, r0.y, -r0.y
+mul r0.z, r0.x, c10
+mad r0.y, v0, c12.x, -r0.z
+mov r0.x, c0
+mad r0.y, c12, r0.x, r0
+mad r0.z, v0.x, c11, -r0
+mov r0.x, c0
+mad r0.x, c11.w, r0, r0.z
+texld r0.x, r0, s1
+add r0.x, v0, r0
+add r0.y, v0, r0.x
+mov r0.x, c0
+mad r0.x, c12.z, r0, r0.y
+mad r0.x, r0, c13, c13.y
+frc r0.x, r0
+mad r1.x, r0, c13.z, c13.w
+sincos r0.xy, r1.x
+add r0.y, r0, c12.w
+add r0.x, c2.w, -c2.y
+mul_sat r0.z, r0.y, c14.x
+mad r0.x, v0.y, r0, c2.y
+add_pp r0.y, -r0.x, c11
+mov r0.x, c7
+add r0.y, -r0, c4.x
+add r0.x, c10.w, r0
+cmp r0.y, r0, c11.x, c11
+cmp r0.x, r0, c11, c11.y
+add_pp_sat r0.x, r0, r0.y
+cmp r0.x, -r0, r0.z, c11
+mad r0.y, r0.x, c14, v0
+mov r0.x, v0
+texld r0.xyz, r0, s0
+add_pp r0.w, r0.z, c9
+abs_pp r0.w, r0
+cmp_pp r1.y, -r0.w, c11, c11.x
+add_pp r0.w, r0.x, c9
+add_pp r1.x, r0.y, c9.w
+abs_pp r1.x, r1
+abs_pp r0.w, r0
+cmp_pp r1.x, -r1, c11.y, c11
+cmp_pp r0.w, -r0, c11.y, c11.x
+mul_pp r0.w, r0, r1.x
+mul_pp r0.w, r0, r1.y
+mov_pp r5.xyz, r0
+if_gt r0.w, c11.x
+texld r0, c14.zwzw, s2
+mov_pp r3, r0
+else
+mul_pp r0.x, r5, c9
+abs r0.y, r0.x
+frc r0.z, r0.y
+add r0.y, r0, -r0.z
+cmp r4.w, r0.x, r0.y, -r0.y
+add r0.x, r4.w, c15
+cmp r0.x, -r0, r4.w, r0
+add r0.x, r0, c9.w
+mul r0.y, r0.x, c10.x
+frc r0.z, r0.y
+add r0.z, r0.y, -r0
+min r0.z, r0, c17.w
+max r0.z, r0, c11.x
+abs r0.w, r0.z
+frc r1.x, r0.w
+add r0.w, r0, -r1.x
+cmp r4.x, r0.z, r0.w, -r0.w
+add r0.z, r4.x, c19.w
+mul r1.y, r0.z, c19.z
+mul_pp r0.z, r5.y, c9.x
+abs r0.w, r0.z
+frc r1.x, r0.w
+add r0.w, r0, -r1.x
+cmp r4.y, r0.z, r0.w, -r0.w
+add r4.z, r4.y, c15.y
+abs r0.y, r0
+frc r0.y, r0
+mul r0.y, r0, c10
+cmp r0.x, r0, r0.y, -r0.y
+abs r0.y, r0.x
+frc r0.z, r0.y
+add r0.y, r0, -r0.z
+cmp r5.x, r0, r0.y, -r0.y
+cmp_pp r5.y, r4.z, c11.x, c11
+mul_pp r0.x, r5, r5.y
+mul_pp r1.x, r0, c19
+mov r0.x, r1
+add r0.y, r4.x, c13
+mul r0.y, r0, c19.z
+texld r0, r0, s2
+texld r1, r1, s2
+add r2, r0, -r1
+mul r3.x, r4.w, c10
+abs r0.y, r3.x
+mov r0.x, c0
+mul r0.z, c8.x, r0.x
+frc r0.y, r0
+mul r0.x, r0.y, c10.y
+mul r0.y, r0.z, c16
+mad r0.w, -v0.y, c13.y, r0.y
+cmp r0.x, r4.w, r0, -r0
+mad r3.x, -r0, c16, r0.w
+mul r0.y, r0.z, c12.z
+mad r0.w, v0.x, c13.y, r0.y
+add r0.y, r3.x, c11
+mad r0.x, -r0, c16, r0.w
+texld r0.x, r0, s1
+mad r0.y, r0.z, c12.z, r0.x
+mul r3.xy, v0, c17.w
+texld r0.x, r3, s1
+mul r0.z, r0.x, c16.w
+add r0.y, r0, -v0
+abs r0.x, r0.y
+add r0.z, r0, c0.x
+frc r0.x, r0
+cmp r0.x, r0.y, r0, -r0
+mad r0.z, r5.x, c18.y, r0
+mad r0.y, r0.z, c17.x, c17
+frc r0.y, r0
+mad r0.x, r0, c17, c17.y
+frc r0.x, r0
+mad r3.x, r0.y, c13.z, c13.w
+mad r5.w, r0.x, c13.z, c13
+sincos r0.xy, r3.x
+mad r0.x, r0.y, c13.y, c13.y
+sincos r3.xy, r5.w
+mul r0.z, r3.y, c13.y
+mad_pp r0.w, r0.z, c17.z, c17.y
+add r0.y, -r4.w, c9.z
+cmp r0.y, r0, c11.x, c11
+mov r0.z, c1.x
+mad_pp r0.x, r0, c18.z, c18.w
+mad_sat r0.z, c16.w, -r0, r0.w
+abs_pp r0.y, r0
+cmp_pp r5.w, -r0.y, c11.y, r0.z
+mad r1, r5.w, r2, r1
+cmp r2.x, r4.z, r4.z, r4.y
+add r2.y, r2.x, c15.z
+add r2.z, r2.x, c15
+cmp r2.x, r2.y, r2.y, r2
+cmp r2.y, r2.z, c11, c11.x
+add r2.z, r2.x, c18.x
+abs_pp r2.y, r2
+cmp r2.z, r2, c16.y, c16
+mov r0.y, c19
+mul_pp r0.x, r0, c19
+texld r0, r0, s2
+add_pp r0, r0, -r1
+mul r2.z, r2, c5.x
+cmp r2.y, -r2, r2.x, c15.w
+mad_pp r3, r2.z, r0, r1
+if_eq r2.y, c15.w
+mad_pp r0.x, -r5.z, c23, c23.y
+add r2.x, r4, c22
+mad_pp r2.y, -r5.w, c22, c22.z
+abs r2.x, r2
+mov r0.y, c23.z
+mul_pp r0.x, r0, c22.w
+texld r0, r0, s0
+add_pp r1, -r0, c11.y
+mad_pp r1, r2.y, r1, r0
+cmp_pp r1, -r2.x, r1, r0
+texld r0, c21.zwzw, s2
+add_pp r0, r0, -r1
+mul r2.x, r5, c21.y
+mad_pp r0, r2.x, r0, r1
+add_pp r1, -r3, r0
+add r2.x, r5, c20
+mad_pp r1, r1, c23.w, r3
+mul_pp r0, r3, r0
+mad_pp r0, r0, c11.z, -r1
+mad_pp r2.y, r5.w, c20.z, c20.w
+mul_sat r2.x, r2, c20.y
+mad_pp r2.x, r2, r2.y, c21
+mad_pp r3, r2.x, r0, r1
+else
+add r0.x, r2, c24
+cmp r0.y, r0.x, c11.x, c11
+cmp r0.x, -r2, c11, c11.y
+mul_pp r0.x, r0, r0.y
+if_gt r0.x, c11.x
+add r1.z, r2.y, c9.w
+mad r0.x, -r1.z, c25.y, c25.z
+mul r1.y, r0.x, c19.z
+mov r1.x, c25
+texld r2, r1, s2
+mov r0.y, r1
+mov r0.x, c24.w
+texld r0, r0, s2
+add r4, r0, -r2
+mad r1.x, -r1.z, c24.y, c24.z
+mul r0.y, r1.x, c19.z
+mov r0.x, c25
+texld r1, r0, s2
+mov r0.x, c24.w
+texld r0, r0, s2
+add r0, r0, -r1
+mad r2, r5.w, r4, r2
+mad r0, r5.w, r0, r1
+add r0, r0, -r2
+mul r0, r5.x, r0
+mad r0, r0, c10.x, r2
+add_pp r0, r0, -r3
+mad_pp r3, r5.z, r0, r3
+else
+add_pp r0, -r3, c11.y
+mul r1.x, r5.z, c6
+mad_pp r0, r1.x, r0, r3
+add r1.y, r2.x, c24.x
+abs r1.x, r1.y
+cmp_pp r3, -r1.x, r0, r3
+endif
+endif
+add_pp r0.x, -r5.y, c11.y
+mad_pp r0.y, r0.x, c13, r5
+add r0.x, r5, c25.w
+cmp_pp r0.x, r0, c11.y, r0.y
+mul_pp r1.x, r5, r0
+texld r0, c21.zwzw, s2
+mul r1.x, r1, c3
+add_pp r0, r0, -r3
+mul_sat r1.x, r1, c10
+mad_pp r3, r1.x, r0, r3
+endif
+mul_pp r0, r3, v1.xxxw
+mul_pp r1.x, r0.y, c26
+mad_pp r1.y, r0.x, c26, r1.x
+mul_pp r1.x, v1.y, c21
+mad_pp r1.y, r0.z, c26.z, r1
+mad r1.x, r1.y, r1, -r1
+add r1.x, r1, c11.y
+rcp_pp r1.x, r1.x
+mul_pp oC0.xyz, r0, r1.x
+mov_pp oC0.w, r0
+"
+}
+SubProgram "d3d11 " {
+// Stats: 137 math, 16 textures, 6 branches
+SetTexture 0 [_MainTex] 2D 0
+SetTexture 1 [_NoiseTex] 2D 2
+SetTexture 2 [_PalTex] 2D 1
+ConstBuffer "$Globals" 112
+Float 20 [_RAIN]
+Float 24 [_light]
+Vector 32 [_spriteRect]
+Float 64 [_fogAmount]
+Float 68 [_waterLevel]
+Float 72 [_Grime]
+Float 76 [_SwarmRoom]
+Float 80 [_WetTerrain]
+Float 84 [_cloudsSpeed]
+BindCB  "$Globals" 0
+"ps_4_0
+eefiecedmicjnddhccmgmgpilbjaeiedfjebdbbfabaaaaaadebiaaaaadaaaaaa
+cmaaaaaakaaaaaaaneaaaaaaejfdeheogmaaaaaaadaaaaaaaiaaaaaafaaaaaaa
+aaaaaaaaabaaaaaaadaaaaaaaaaaaaaaapaaaaaafmaaaaaaaaaaaaaaaaaaaaaa
+adaaaaaaabaaaaaaadadaaaagfaaaaaaaaaaaaaaaaaaaaaaadaaaaaaacaaaaaa
+apalaaaafdfgfpfaepfdejfeejepeoaafeeffiedepepfceeaaedepemepfcaakl
+epfdeheocmaaaaaaabaaaaaaaiaaaaaacaaaaaaaaaaaaaaaaaaaaaaaadaaaaaa
+aaaaaaaaapaaaaaafdfgfpfegbhcghgfheaaklklfdeieefcfibhaaaaeaaaaaaa
+ngafaaaafjaaaaaeegiocaaaaaaaaaaaagaaaaaafkaaaaadaagabaaaaaaaaaaa
+fkaaaaadaagabaaaabaaaaaafkaaaaadaagabaaaacaaaaaafibiaaaeaahabaaa
+aaaaaaaaffffaaaafibiaaaeaahabaaaabaaaaaaffffaaaafibiaaaeaahabaaa
+acaaaaaaffffaaaagcbaaaaddcbabaaaabaaaaaagcbaaaadlcbabaaaacaaaaaa
+gfaaaaadpccabaaaaaaaaaaagiaaaaacamaaaaaaefaaaaajpcaabaaaaaaaaaaa
+egbabaaaabaaaaaaeghobaaaaaaaaaaaaagabaaaaaaaaaaadiaaaaahbcaabaaa
+aaaaaaaaakaabaaaaaaaaaaaabeaaaaafgffdfeabnaaaaaiccaabaaaaaaaaaaa
+akaabaaaaaaaaaaaakaabaiaebaaaaaaaaaaaaaabkaaaaagbcaabaaaaaaaaaaa
+akaabaiaibaaaaaaaaaaaaaadhaaaaakbcaabaaaaaaaaaaabkaabaaaaaaaaaaa
+akaabaaaaaaaaaaaakaabaiaebaaaaaaaaaaaaaadcaaaaajbcaabaaaaaaaaaaa
+akaabaaaaaaaaaaaabeaaaaaaaaaleecabeaaaaaaaaaialpdiaaaaahbcaabaaa
+aaaaaaaaakaabaaaaaaaaaaaabeaaaaaijiiaidnbnaaaaaiccaabaaaaaaaaaaa
+akaabaaaaaaaaaaaakaabaiaebaaaaaaaaaaaaaabkaaaaagbcaabaaaaaaaaaaa
+akaabaiaibaaaaaaaaaaaaaadhaaaaakbcaabaaaaaaaaaaabkaabaaaaaaaaaaa
+akaabaaaaaaaaaaaakaabaiaebaaaaaaaaaaaaaadiaaaaakgcaabaaaaaaaaaaa
+agbbbaaaabaaaaaaaceaaaaaaaaaaaaaaaaamadpaaaaiadoaaaaaaaadcaaaaan
+dcaabaaaaaaaaaaaagaabaiaebaaaaaaaaaaaaaaaceaaaaamnmmmmdnmnmmmmdn
+aaaaaaaaaaaaaaaajgafbaaaaaaaaaaadiaaaaaiecaabaaaaaaaaaaabkiacaaa
+aaaaaaaaabaaaaaaabeaaaaamnmmmmdndcaaaaandcaabaaaaaaaaaaafgifcaaa
+aaaaaaaaabaaaaaaaceaaaaaaknhcddmmnmmemdnaaaaaaaaaaaaaaaaegaabaaa
+aaaaaaaaefaaaaajpcaabaaaabaaaaaaegaabaaaaaaaaaaaeghobaaaabaaaaaa
+aagabaaaacaaaaaaaaaaaaahbcaabaaaaaaaaaaaakaabaaaabaaaaaaakbabaaa
+abaaaaaaaaaaaaahbcaabaaaaaaaaaaaakaabaaaaaaaaaaabkbabaaaabaaaaaa
+dcaaaaakbcaabaaaaaaaaaaabkiacaaaaaaaaaaaabaaaaaaabeaaaaamnmmmmdn
+akaabaaaaaaaaaaadiaaaaahbcaabaaaaaaaaaaaakaabaaaaaaaaaaaabeaaaaa
+fclibgebenaaaaagbcaabaaaaaaaaaaaaanaaaaaakaabaaaaaaaaaaaaaaaaaah
+bcaabaaaaaaaaaaaakaabaaaaaaaaaaaabeaaaaaddddhdlpdicaaaahbcaabaaa
+aaaaaaaaakaabaaaaaaaaaaaabeaaaaaaaaakaebaaaaaaakccaabaaaaaaaaaaa
+bkiacaiaebaaaaaaaaaaaaaaacaaaaaadkiacaaaaaaaaaaaacaaaaaadcaaaaak
+ccaabaaaaaaaaaaabkbabaaaabaaaaaabkaabaaaaaaaaaaabkiacaaaaaaaaaaa
+acaaaaaadbaaaaaiicaabaaaaaaaaaaaakiacaaaaaaaaaaaafaaaaaaabeaaaaa
+aaaaaadpaaaaaaaiccaabaaaaaaaaaaabkaabaiaebaaaaaaaaaaaaaaabeaaaaa
+aaaaiadpdbaaaaaiccaabaaaaaaaaaaabkiacaaaaaaaaaaaaeaaaaaabkaabaaa
+aaaaaaaadmaaaaahccaabaaaaaaaaaaabkaabaaaaaaaaaaadkaabaaaaaaaaaaa
+diaaaaahbcaabaaaaaaaaaaaakaabaaaaaaaaaaaabeaaaaagpbciddkdhaaaaaj
+bcaabaaaaaaaaaaabkaabaaaaaaaaaaaabeaaaaaaaaaaaaaakaabaaaaaaaaaaa
+aaaaaaahccaabaaaaaaaaaaaakaabaaaaaaaaaaabkbabaaaabaaaaaadgaaaaaf
+bcaabaaaaaaaaaaaakbabaaaabaaaaaaefaaaaajpcaabaaaabaaaaaaegaabaaa
+aaaaaaaaeghobaaaaaaaaaaaaagabaaaaaaaaaaabiaaaaaklcaabaaaaaaaaaaa
+egaibaaaabaaaaaaaceaaaaaaaaaiadpaaaaiadpaaaaaaaaaaaaiadpabaaaaah
+bcaabaaaaaaaaaaabkaabaaaaaaaaaaaakaabaaaaaaaaaaaabaaaaahbcaabaaa
+aaaaaaaadkaabaaaaaaaaaaaakaabaaaaaaaaaaadiaaaaakkcaabaaaaaaaaaaa
+agaebaaaabaaaaaaaceaaaaaaaaaaaaaaaaahpedaaaaaaaaaaaahpedblaaaaaf
+dcaabaaaacaaaaaangafbaaaaaaaaaaacbaaaaahicaabaaaaaaaaaaabkaabaaa
+acaaaaaaabeaaaaabaaaaaaaboaaaaakdcaabaaaadaaaaaabgafbaaaacaaaaaa
+aceaaaaapappppppkgppppppaaaaaaaaaaaaaaaadgaaaaafecaabaaaadaaaaaa
+abeaaaaaaaaaaaaadgaaaaafecaabaaaacaaaaaaabeaaaaaaaaaiadpdhaaaaaj
+dcaabaaaabaaaaaapgapbaaaaaaaaaaaigaabaaaadaaaaaajgafbaaaacaaaaaa
+cbaaaaahicaabaaaabaaaaaaakaabaaaabaaaaaaabeaaaaaaiaaaaaaboaaaaah
+bcaabaaaaeaaaaaaakaabaaaabaaaaaaabeaaaaapippppppdgaaaaaikcaabaaa
+aeaaaaaaaceaaaaaaaaaaaaageaaaaaaaaaaaaaaaaaafadpdhaaaaajjcaabaaa
+abaaaaaapgapbaaaabaaaaaaagaebaaaaeaaaaaaagaabaaaabaaaaaadiaaaaai
+ccaabaaaacaaaaaackaabaaaaaaaaaaabkiacaaaaaaaaaaaafaaaaaadcaaaaaj
+ccaabaaaacaaaaaaakbabaaaabaaaaaaabeaaaaaaaaaaadpbkaabaaaacaaaaaa
+edaaaaafccaabaaaaaaaaaaabkaabaaaaaaaaaaadiaaaaahccaabaaaaaaaaaaa
+bkaabaaaaaaaaaaaabeaaaaaijiiaidnbnaaaaaiicaabaaaacaaaaaabkaabaaa
+aaaaaaaabkaabaiaebaaaaaaaaaaaaaabkaaaaagccaabaaaaaaaaaaabkaabaia
+ibaaaaaaaaaaaaaadhaaaaakccaabaaaaaaaaaaadkaabaaaacaaaaaabkaabaaa
+aaaaaaaabkaabaiaebaaaaaaaaaaaaaadcaaaaakbcaabaaaaeaaaaaabkaabaia
+ebaaaaaaaaaaaaaaabeaaaaaomfblidnbkaabaaaacaaaaaadcaaaaakccaabaaa
+acaaaaaabkbabaiaebaaaaaaabaaaaaaabeaaaaaaaaaaadpabeaaaaaaaaaiadp
+diaaaaajicaabaaaacaaaaaabkiacaaaaaaaaaaaabaaaaaabkiacaaaaaaaaaaa
+afaaaaaadcaaaaajccaabaaaacaaaaaadkaabaaaacaaaaaaabeaaaaamnmmemdo
+bkaabaaaacaaaaaadcaaaaakccaabaaaaeaaaaaabkaabaiaebaaaaaaaaaaaaaa
+abeaaaaaomfblidnbkaabaaaacaaaaaaefaaaaajpcaabaaaafaaaaaaegaabaaa
+aeaaaaaaeghobaaaabaaaaaaaagabaaaacaaaaaadcaaaaakccaabaaaaaaaaaaa
+ckaabaaaaaaaaaaabkiacaaaaaaaaaaaafaaaaaaakaabaaaafaaaaaaaaaaaaai
+ccaabaaaaaaaaaaabkaabaaaaaaaaaaabkbabaiaebaaaaaaabaaaaaabnaaaaai
+ecaabaaaaaaaaaaabkaabaaaaaaaaaaabkaabaiaebaaaaaaaaaaaaaabkaaaaag
+ccaabaaaaaaaaaaabkaabaiaibaaaaaaaaaaaaaadhaaaaakccaabaaaaaaaaaaa
+ckaabaaaaaaaaaaabkaabaaaaaaaaaaabkaabaiaebaaaaaaaaaaaaaadiaaaaah
+ccaabaaaaaaaaaaabkaabaaaaaaaaaaaabeaaaaamdpfmieaenaaaaagccaabaaa
+aaaaaaaaaanaaaaabkaabaaaaaaaaaaadcaaaaajccaabaaaaaaaaaaabkaabaaa
+aaaaaaaaabeaaaaaaaaaeaeaabeaaaaaaaaaaadpdccaaaalicaabaaaadaaaaaa
+ckiacaiaebaaaaaaaaaaaaaaabaaaaaaabeaaaaaaaaaiaeabkaabaaaaaaaaaaa
+ccaaaaahccaabaaaaaaaaaaaabeaaaaafkaaaaaaakaabaaaacaaaaaadhaaaaaj
+gcaabaaaaaaaaaaafgafbaaaaaaaaaaafgahbaaaadaaaaaaagacbaaaacaaaaaa
+boaaaaahccaabaaaaaaaaaaabkaabaaaaaaaaaaaabeaaaaappppppppclaaaaaf
+ccaabaaaaaaaaaaabkaabaaaaaaaaaaadiaaaaahccaabaaaaaaaaaaabkaabaaa
+aaaaaaaaabeaaaaaijiiaidnebaaaaafbcaabaaaacaaaaaabkaabaaaaaaaaaaa
+deaaaaahbcaabaaaacaaaaaaakaabaaaacaaaaaaabeaaaaaaaaaaaaaddaaaaah
+bcaabaaaacaaaaaaakaabaaaacaaaaaaabeaaaaaaaaaaaeablaaaaafccaabaaa
+acaaaaaaakaabaaaacaaaaaabnaaaaaiecaabaaaacaaaaaabkaabaaaaaaaaaaa
+bkaabaiaebaaaaaaaaaaaaaabkaaaaagccaabaaaaaaaaaaabkaabaiaibaaaaaa
+aaaaaaaadhaaaaakccaabaaaaaaaaaaackaabaaaacaaaaaabkaabaaaaaaaaaaa
+bkaabaiaebaaaaaaaaaaaaaadiaaaaahccaabaaaaaaaaaaabkaabaaaaaaaaaaa
+abeaaaaaaaaapaebedaaaaafecaabaaaacaaaaaabkaabaaaaaaaaaaadiaaaaah
+icaabaaaacaaaaaabkaabaaaabaaaaaackaabaaaacaaaaaadiaaaaahbcaabaaa
+adaaaaaadkaabaaaacaaaaaaabeaaaaaaaaaaadnboaaaaahicaabaaaacaaaaaa
+bkaabaaaacaaaaaaabeaaaaaadaaaaaaclaaaaaficaabaaaacaaaaaadkaabaaa
+acaaaaaaaaaaaaakjcaabaaaacaaaaaaagambaaaacaaaaaaaceaaaaaaaaaaadp
+aaaaaaaaaaaaaaaaaaaaaadpdiaaaaakgcaabaaaadaaaaaapgambaaaacaaaaaa
+aceaaaaaaaaaaaaaaaaaaadoaaaaaadoaaaaaaaaefaaaaajpcaabaaaafaaaaaa
+egaabaaaadaaaaaaeghobaaaacaaaaaaaagabaaaabaaaaaaefaaaaajpcaabaaa
+adaaaaaaigaabaaaadaaaaaaeghobaaaacaaaaaaaagabaaaabaaaaaaaaaaaaah
+jcaabaaaacaaaaaaagbebaaaabaaaaaaagbebaaaabaaaaaaefaaaaajpcaabaaa
+agaaaaaamgaabaaaacaaaaaaeghobaaaabaaaaaaaagabaaaacaaaaaadcaaaaak
+bcaabaaaacaaaaaaakaabaaaagaaaaaaabeaaaaaaaaaiaeabkiacaaaaaaaaaaa
+abaaaaaadcaaaaajbcaabaaaacaaaaaackaabaaaacaaaaaaabeaaaaaklkkkkdn
+akaabaaaacaaaaaadiaaaaahbcaabaaaacaaaaaaakaabaaaacaaaaaaabeaaaaa
+mdpfmieaenaaaaagbcaabaaaacaaaaaaaanaaaaaakaabaaaacaaaaaadcaaaaaj
+bcaabaaaacaaaaaaakaabaaaacaaaaaaabeaaaaaaaaaaadpabeaaaaaaaaaaadp
+dcaaaaajbcaabaaaacaaaaaaakaabaaaacaaaaaaabeaaaaaaaaamiebabeaaaaa
+aaaalaeadiaaaaahecaabaaaaeaaaaaaakaabaaaacaaaaaaabeaaaaaaaaaaadn
+efaaaaajpcaabaaaaeaaaaaaogakbaaaaeaaaaaaeghobaaaacaaaaaaaagabaaa
+abaaaaaadcaaaaakbcaabaaaacaaaaaackaabaiaebaaaaaaabaaaaaaabeaaaaa
+aaaahpedabeaaaaaaaiahpeddiaaaaahbcaabaaaagaaaaaaakaabaaaacaaaaaa
+abeaaaaaohdodldkdgaaaaafccaabaaaagaaaaaaabeaaaaaaknhhpdpefaaaaaj
+pcaabaaaagaaaaaaegaabaaaagaaaaaaeghobaaaaaaaaaaaaagabaaaaaaaaaaa
+cjaaaaahbcaabaaaacaaaaaadkaabaaaabaaaaaaabeaaaaaabaaaaaaboaaaaah
+bcaabaaaacaaaaaaakaabaaaacaaaaaaabeaaaaapoppppppclaaaaafbcaabaaa
+acaaaaaaakaabaaaacaaaaaaaaaaaaaljcaabaaaacaaaaaaagaabaiaebaaaaaa
+acaaaaaaaceaaaaaaaaalaeaaaaaaaaaaaaaaaaaaaaajaeadiaaaaakdcaabaaa
+ahaaaaaamgaabaaaacaaaaaaaceaaaaaaaaaaadoaaaaaadoaaaaaaaaaaaaaaaa
+dgaaaaaimcaabaaaahaaaaaaaceaaaaaaaaaaaaaaaaaaaaaaaaahedpaaaahmdp
+efaaaaajpcaabaaaaiaaaaaacgakbaaaahaaaaaaeghobaaaacaaaaaaaagabaaa
+abaaaaaaefaaaaajpcaabaaaajaaaaaadgapbaaaahaaaaaaeghobaaaacaaaaaa
+aagabaaaabaaaaaaefaaaaajpcaabaaaakaaaaaaggakbaaaahaaaaaaeghobaaa
+acaaaaaaaagabaaaabaaaaaaefaaaaajpcaabaaaahaaaaaahgapbaaaahaaaaaa
+eghobaaaacaaaaaaaagabaaaabaaaaaabpaaaeadakaabaaaaaaaaaaaefaaaaam
+pcaabaaaalaaaaaaaceaaaaaaaaaiadmaaaahadpaaaaaaaaaaaaaaaaeghobaaa
+acaaaaaaaagabaaaabaaaaaabcaaaaabblaaaaafbcaabaaaaaaaaaaabkaabaaa
+aaaaaaaaaaaaaaaipcaabaaaadaaaaaaegaobaiaebaaaaaaafaaaaaaegaobaaa
+adaaaaaadcaaaaajpcaabaaaadaaaaaakgakbaaaaaaaaaaaegaobaaaadaaaaaa
+egaobaaaafaaaaaacbaaaaahccaabaaaaaaaaaaaakaabaaaabaaaaaaabeaaaaa
+aeaaaaaaabaaaaahccaabaaaaaaaaaaabkaabaaaaaaaaaaaabeaaaaamnmmemdo
+diaaaaaiccaabaaaaaaaaaaabkaabaaaaaaaaaaackiacaaaaaaaaaaaaeaaaaaa
+aaaaaaaipcaabaaaaeaaaaaaegaobaiaebaaaaaaadaaaaaaegaobaaaaeaaaaaa
+dcaaaaajpcaabaaaadaaaaaafgafbaaaaaaaaaaaegaobaaaaeaaaaaaegaobaaa
+adaaaaaacaaaaaahccaabaaaaaaaaaaadkaabaaaabaaaaaaabeaaaaageaaaaaa
+bpaaaeadbkaabaaaaaaaaaaacaaaaaahccaabaaaaaaaaaaabkaabaaaacaaaaaa
+abeaaaaaacaaaaaadcaaaaakicaabaaaabaaaaaackaabaiaebaaaaaaaaaaaaaa
+abeaaaaamnmmmmdnabeaaaaamnmmemdoaaaaaaalpcaabaaaaeaaaaaaegaobaia
+ebaaaaaaagaaaaaaaceaaaaaaaaaiadpaaaaiadpaaaaiadpaaaaiadpdcaaaaaj
+pcaabaaaaeaaaaaapgapbaaaabaaaaaaegaobaaaaeaaaaaaegaobaaaagaaaaaa
+dhaaaaajpcaabaaaaeaaaaaafgafbaaaaaaaaaaaegaobaaaaeaaaaaaegaobaaa
+agaaaaaaefaaaaampcaabaaaafaaaaaaaceaaaaaaaaaeadnaaaahadpaaaaaaaa
+aaaaaaaaeghobaaaacaaaaaaaagabaaaabaaaaaadiaaaaahccaabaaaaaaaaaaa
+ckaabaaaacaaaaaaabeaaaaaijiiiidmaaaaaaaipcaabaaaafaaaaaaegaobaia
+ebaaaaaaaeaaaaaaegaobaaaafaaaaaadcaaaaajpcaabaaaaeaaaaaafgafbaaa
+aaaaaaaaegaobaaaafaaaaaaegaobaaaaeaaaaaaaaaaaaaipcaabaaaafaaaaaa
+egaobaiaebaaaaaaadaaaaaaegaobaaaaeaaaaaadcaaaaampcaabaaaafaaaaaa
+egaobaaaafaaaaaaaceaaaaadddddddpdddddddpdddddddpdddddddpegaobaaa
+adaaaaaadiaaaaahpcaabaaaaeaaaaaaegaobaaaadaaaaaaegaobaaaaeaaaaaa
+aaaaaaahccaabaaaaaaaaaaackaabaaaacaaaaaaabeaaaaaaaaagamadicaaaah
+ccaabaaaaaaaaaaabkaabaaaaaaaaaaaabeaaaaajkjjjjdodcaaaaajicaabaaa
+abaaaaaackaabaaaaaaaaaaaabeaaaaamnmmmmdoabeaaaaajjjjbjlpdcaaaaaj
+ccaabaaaaaaaaaaabkaabaaaaaaaaaaadkaabaaaabaaaaaaabeaaaaaggggggdp
+dcaaaaanpcaabaaaaeaaaaaaegaobaaaaeaaaaaaaceaaaaaaaaamadpaaaamadp
+aaaamadpaaaamadpegaobaiaebaaaaaaafaaaaaadcaaaaajpcaabaaaaeaaaaaa
+fgafbaaaaaaaaaaaegaobaaaaeaaaaaaegaobaaaafaaaaaabcaaaaabccaaaaah
+ccaabaaaaaaaaaaaabeaaaaaaaaaaaaaakaabaaaabaaaaaaccaaaaahicaabaaa
+abaaaaaaakaabaaaabaaaaaaabeaaaaaadaaaaaaabaaaaahccaabaaaaaaaaaaa
+bkaabaaaaaaaaaaadkaabaaaabaaaaaabpaaaeadbkaabaaaaaaaaaaaaaaaaaai
+pcaabaaaafaaaaaaegaobaiaebaaaaaaaiaaaaaaegaobaaaajaaaaaadcaaaaaj
+pcaabaaaafaaaaaakgakbaaaaaaaaaaaegaobaaaafaaaaaaegaobaaaaiaaaaaa
+aaaaaaaipcaabaaaagaaaaaaegaobaiaebaaaaaaakaaaaaaegaobaaaahaaaaaa
+dcaaaaajpcaabaaaagaaaaaakgakbaaaaaaaaaaaegaobaaaagaaaaaaegaobaaa
+akaaaaaadiaaaaahccaabaaaaaaaaaaackaabaaaacaaaaaaabeaaaaaijiiaidn
+aaaaaaaipcaabaaaagaaaaaaegaobaiaebaaaaaaafaaaaaaegaobaaaagaaaaaa
+dcaaaaajpcaabaaaafaaaaaafgafbaaaaaaaaaaaegaobaaaagaaaaaaegaobaaa
+afaaaaaaaaaaaaaipcaabaaaafaaaaaaegaobaiaebaaaaaaadaaaaaaegaobaaa
+afaaaaaadcaaaaajpcaabaaaaeaaaaaakgakbaaaabaaaaaaegaobaaaafaaaaaa
+egaobaaaadaaaaaabcaaaaabcaaaaaahccaabaaaaaaaaaaaakaabaaaabaaaaaa
+abeaaaaaadaaaaaadiaaaaaiecaabaaaaaaaaaaackaabaaaabaaaaaadkiacaaa
+aaaaaaaaaeaaaaaaaaaaaaalpcaabaaaafaaaaaaegaobaiaebaaaaaaadaaaaaa
+aceaaaaaaaaaiadpaaaaiadpaaaaiadpaaaaiadpdcaaaaajpcaabaaaafaaaaaa
+kgakbaaaaaaaaaaaegaobaaaafaaaaaaegaobaaaadaaaaaadhaaaaajpcaabaaa
+aeaaaaaafgafbaaaaaaaaaaaegaobaaaafaaaaaaegaobaaaadaaaaaabfaaaaab
+bfaaaaabefaaaaampcaabaaaadaaaaaaaceaaaaaaaaaeadnaaaahadpaaaaaaaa
+aaaaaaaaeghobaaaacaaaaaaaagabaaaabaaaaaaccaaaaahbcaabaaaaaaaaaaa
+akaabaaaaaaaaaaaabeaaaaaakaaaaaaabaaaaahccaabaaaaaaaaaaadkaabaaa
+aaaaaaaaabeaaaaaaaaaaadpaaaaaaahccaabaaaaaaaaaaabkaabaaaaaaaaaaa
+bkaabaaaabaaaaaadhaaaaajbcaabaaaaaaaaaaaakaabaaaaaaaaaaabkaabaaa
+aaaaaaaaabeaaaaaaaaaiadpdiaaaaahbcaabaaaaaaaaaaaakaabaaaaaaaaaaa
+ckaabaaaacaaaaaadiaaaaaibcaabaaaaaaaaaaaakaabaaaaaaaaaaaakiacaaa
+aaaaaaaaaeaaaaaadicaaaahbcaabaaaaaaaaaaaakaabaaaaaaaaaaaabeaaaaa
+ijiiaidnaaaaaaaipcaabaaaabaaaaaaegaobaiaebaaaaaaaeaaaaaaegaobaaa
+adaaaaaadcaaaaajpcaabaaaalaaaaaaagaabaaaaaaaaaaaegaobaaaabaaaaaa
+egaobaaaaeaaaaaabfaaaaabdiaaaaahhcaabaaaaaaaaaaaegacbaaaalaaaaaa
+agbabaaaacaaaaaabaaaaaakicaabaaaaaaaaaaaegacbaaaaaaaaaaaaceaaaaa
+naldfjdofjbhdhdpjinnjddnaaaaaaaadiaaaaahbcaabaaaabaaaaaabkbabaaa
+acaaaaaaabeaaaaaggggggdpdcaaaaakccaabaaaabaaaaaabkbabaiaebaaaaaa
+acaaaaaaabeaaaaaggggggdpabeaaaaaaaaaiadpdcaaaaajicaabaaaaaaaaaaa
+dkaabaaaaaaaaaaaakaabaaaabaaaaaabkaabaaaabaaaaaaaoaaaaahhccabaaa
+aaaaaaaaegacbaaaaaaaaaaapgapbaaaaaaaaaaadiaaaaahiccabaaaaaaaaaaa
+dkaabaaaalaaaaaadkbabaaaacaaaaaadoaaaaab"
+}
+SubProgram "gles " {
+"!!GLES"
+}
+SubProgram "glesdesktop " {
+"!!GLES"
+}
+SubProgram "gles3 " {
+"!!GLES3"
+}
+SubProgram "metal " {
+// Stats: 234 math, 16 textures, 17 branches
+SetTexture 0 [_MainTex] 2D 0
+SetTexture 1 [_PalTex] 2D 1
+SetTexture 2 [_NoiseTex] 2D 2
+ConstBuffer "$Globals" 56
+Float 0 [_RAIN]
+Float 4 [_light]
+Vector 16 [_spriteRect]
+Float 32 [_fogAmount]
+Float 36 [_waterLevel]
+Float 40 [_Grime]
+Float 44 [_SwarmRoom]
+Float 48 [_WetTerrain]
+Float 52 [_cloudsSpeed]
+"metal_fs
+#include <metal_stdlib>
+using namespace metal;
+struct xlatMtlShaderInput {
+  float2 xlv_TEXCOORD0;
+  half4 xlv_COLOR;
+};
+struct xlatMtlShaderOutput {
+  half4 _glesFragData_0 [[color(0)]];
+};
+struct xlatMtlShaderUniform {
+  float _RAIN;
+  float _light;
+  float4 _spriteRect;
+  float _fogAmount;
+  float _waterLevel;
+  float _Grime;
+  float _SwarmRoom;
+  float _WetTerrain;
+  float _cloudsSpeed;
+};
+fragment xlatMtlShaderOutput xlatMtlMain (xlatMtlShaderInput _mtl_i [[stage_in]], constant xlatMtlShaderUniform& _mtl_u [[buffer(0)]]
+  ,   texture2d<half> _MainTex [[texture(0)]], sampler _mtlsmp__MainTex [[sampler(0)]]
+  ,   texture2d<half> _PalTex [[texture(1)]], sampler _mtlsmp__PalTex [[sampler(1)]]
+  ,   texture2d<half> _NoiseTex [[texture(2)]], sampler _mtlsmp__NoiseTex [[sampler(2)]])
+{
+  xlatMtlShaderOutput _mtl_o;
+  float t_1;
+  float lum_2;
+  half4 texcol_3;
+  half2 screenPos_4;
+  float displace_5;
+  half4 setColor_6;
+  setColor_6 = half4(float4(0.0, 0.0, 0.0, 1.0));
+  half tmpvar_7;
+  tmpvar_7 = ((_MainTex.sample(_mtlsmp__MainTex, (float2)(_mtl_i.xlv_TEXCOORD0)).x * (half)255.0) / (half)90.0);
+  half tmpvar_8;
+  tmpvar_8 = (fract(abs(tmpvar_7)) * (half)90.0);
+  half tmpvar_9;
+  if ((tmpvar_7 >= (half)0.0)) {
+    tmpvar_9 = tmpvar_8;
+  } else {
+    tmpvar_9 = -(tmpvar_8);
+  };
+  half tmpvar_10;
+  tmpvar_10 = ((tmpvar_9 - (half)1.0) / (half)30.0);
+  half tmpvar_11;
+  tmpvar_11 = (fract(abs(tmpvar_10)) * (half)30.0);
+  half tmpvar_12;
+  if ((tmpvar_10 >= (half)0.0)) {
+    tmpvar_12 = tmpvar_11;
+  } else {
+    tmpvar_12 = -(tmpvar_11);
+  };
+  float tmpvar_13;
+  tmpvar_13 = float((tmpvar_12 / (half)300.0));
+  float2 tmpvar_14;
+  tmpvar_14.x = (((_mtl_i.xlv_TEXCOORD0.x * 1.5) - tmpvar_13) + (_mtl_u._RAIN * 0.01));
+  tmpvar_14.y = (((_mtl_i.xlv_TEXCOORD0.y * 0.25) - tmpvar_13) + (_mtl_u._RAIN * 0.05));
+  half tmpvar_15;
+  tmpvar_15 = _NoiseTex.sample(_mtlsmp__NoiseTex, (float2)(tmpvar_14)).x;
+  displace_5 = float(tmpvar_15);
+  displace_5 = clamp (((
+    sin((9.42 * ((
+      (displace_5 + _mtl_i.xlv_TEXCOORD0.x)
+     + _mtl_i.xlv_TEXCOORD0.y) + (_mtl_u._RAIN * 0.1))))
+   - 0.95) * 20.0), 0.0, 1.0);
+  float2 tmpvar_16;
+  tmpvar_16.x = mix (_mtl_u._spriteRect.x, _mtl_u._spriteRect.z, _mtl_i.xlv_TEXCOORD0.x);
+  tmpvar_16.y = mix (_mtl_u._spriteRect.y, _mtl_u._spriteRect.w, _mtl_i.xlv_TEXCOORD0.y);
+  screenPos_4 = half2(tmpvar_16);
+  if (((_mtl_u._WetTerrain < 0.5) || ((float)((half)1.0 - screenPos_4.y) > _mtl_u._waterLevel))) {
+    displace_5 = 0.0;
+  };
+  float2 tmpvar_17;
+  tmpvar_17.x = _mtl_i.xlv_TEXCOORD0.x;
+  tmpvar_17.y = (_mtl_i.xlv_TEXCOORD0.y + (displace_5 * 0.001));
+  half4 tmpvar_18;
+  tmpvar_18 = _MainTex.sample(_mtlsmp__MainTex, (float2)(tmpvar_17));
+  texcol_3 = tmpvar_18;
+  if ((((texcol_3.x == (half)1.0) && (texcol_3.y == (half)1.0)) && (texcol_3.z == (half)1.0))) {
+    half4 tmpvar_19;
+    tmpvar_19 = _PalTex.sample(_mtlsmp__PalTex, (float2)(float2(0.015625, 0.9375)));
+    setColor_6 = tmpvar_19;
+  } else {
+    half rbcol_20;
+    half shadow_21;
+    half notFloorDark_22;
+    int effectCol_23;
+    int green_24;
+    int red_25;
+    short tmpvar_26;
+    tmpvar_26 = short((texcol_3.x * (half)255.0));
+    red_25 = int(tmpvar_26);
+    short tmpvar_27;
+    tmpvar_27 = short((texcol_3.y * (half)255.0));
+    green_24 = int(tmpvar_27);
+    effectCol_23 = 0;
+    notFloorDark_22 = half(1.0);
+    if ((green_24 >= 16)) {
+      notFloorDark_22 = half(0.0);
+      green_24 = (green_24 - 16);
+    };
+    if ((green_24 >= 8)) {
+      effectCol_23 = 100;
+      green_24 = (green_24 - 8);
+    } else {
+      effectCol_23 = green_24;
+    };
+    float tmpvar_28;
+    tmpvar_28 = (float(red_25) / 30.0);
+    float tmpvar_29;
+    tmpvar_29 = (fract(abs(tmpvar_28)) * 30.0);
+    float tmpvar_30;
+    if ((tmpvar_28 >= 0.0)) {
+      tmpvar_30 = tmpvar_29;
+    } else {
+      tmpvar_30 = -(tmpvar_29);
+    };
+    float tmpvar_31;
+    tmpvar_31 = (float(red_25) / 30.0);
+    float tmpvar_32;
+    tmpvar_32 = (fract(abs(tmpvar_31)) * 30.0);
+    float tmpvar_33;
+    if ((tmpvar_31 >= 0.0)) {
+      tmpvar_33 = tmpvar_32;
+    } else {
+      tmpvar_33 = -(tmpvar_32);
+    };
+    float2 tmpvar_34;
+    float cse_35;
+    cse_35 = (_mtl_u._RAIN * 0.1);
+    tmpvar_34.x = (((_mtl_i.xlv_TEXCOORD0.x * 0.5) + (cse_35 * _mtl_u._cloudsSpeed)) - (0.003 * tmpvar_30));
+    tmpvar_34.y = (((1.0 - 
+      (_mtl_i.xlv_TEXCOORD0.y * 0.5)
+    ) + (
+      (_mtl_u._RAIN * 0.2)
+     * _mtl_u._cloudsSpeed)) - (0.003 * tmpvar_33));
+    half tmpvar_36;
+    tmpvar_36 = _NoiseTex.sample(_mtlsmp__NoiseTex, (float2)(tmpvar_34)).x;
+    shadow_21 = tmpvar_36;
+    float tmpvar_37;
+    tmpvar_37 = (((float)shadow_21 + (cse_35 * _mtl_u._cloudsSpeed)) - _mtl_i.xlv_TEXCOORD0.y);
+    float tmpvar_38;
+    tmpvar_38 = fract(abs(tmpvar_37));
+    float tmpvar_39;
+    if ((tmpvar_37 >= 0.0)) {
+      tmpvar_39 = tmpvar_38;
+    } else {
+      tmpvar_39 = -(tmpvar_38);
+    };
+    float tmpvar_40;
+    tmpvar_40 = sin((6.28 * tmpvar_39));
+    half tmpvar_41;
+    tmpvar_41 = half((0.5 + (tmpvar_40 * 0.5)));
+    float tmpvar_42;
+    tmpvar_42 = clamp (((float)(
+      ((tmpvar_41 - (half)0.5) * (half)6.0)
+     + (half)0.5) - (_mtl_u._light * 4.0)), 0.0, 1.0);
+    shadow_21 = half(tmpvar_42);
+    if ((red_25 > 90)) {
+      red_25 = (red_25 - 90);
+    } else {
+      shadow_21 = half(1.0);
+    };
+    int tmpvar_43;
+    tmpvar_43 = int(clamp (floor(
+      (float((red_25 - 1)) / 30.0)
+    ), 0.0, 2.0));
+    float tmpvar_44;
+    tmpvar_44 = (float((red_25 - 1)) / 30.0);
+    float tmpvar_45;
+    tmpvar_45 = (fract(abs(tmpvar_44)) * 30.0);
+    float tmpvar_46;
+    if ((tmpvar_44 >= 0.0)) {
+      tmpvar_46 = tmpvar_45;
+    } else {
+      tmpvar_46 = -(tmpvar_45);
+    };
+    int tmpvar_47;
+    tmpvar_47 = int(tmpvar_46);
+    red_25 = tmpvar_47;
+    float2 tmpvar_48;
+    tmpvar_48.x = ((float(tmpvar_47) * (float)notFloorDark_22) / 32.0);
+    tmpvar_48.y = ((float(
+      (tmpvar_43 + 3)
+    ) + 0.5) / 8.0);
+    half4 tmpvar_49;
+    tmpvar_49 = _PalTex.sample(_mtlsmp__PalTex, (float2)(tmpvar_48));
+    float2 tmpvar_50;
+    tmpvar_50.x = ((float(tmpvar_47) * (float)notFloorDark_22) / 32.0);
+    tmpvar_50.y = ((float(tmpvar_43) + 0.5) / 8.0);
+    half4 tmpvar_51;
+    tmpvar_51 = _PalTex.sample(_mtlsmp__PalTex, (float2)(tmpvar_50));
+    half4 tmpvar_52;
+    tmpvar_52 = mix (tmpvar_49, tmpvar_51, half4(shadow_21));
+    setColor_6 = tmpvar_52;
+    float2 tmpvar_53;
+    tmpvar_53 = (_mtl_i.xlv_TEXCOORD0 * float2(2.0, 2.0));
+    half4 tmpvar_54;
+    tmpvar_54 = _NoiseTex.sample(_mtlsmp__NoiseTex, (float2)(tmpvar_53));
+    float tmpvar_55;
+    tmpvar_55 = ((sin(
+      (6.28 * ((_mtl_u._RAIN + (float)(tmpvar_54.x * (half)4.0)) + (float(tmpvar_47) / 12.0)))
+    ) * 0.5) + 0.5);
+    rbcol_20 = half(tmpvar_55);
+    half2 tmpvar_56;
+    tmpvar_56.y = half(0.8125);
+    tmpvar_56.x = (((half)5.5 + (rbcol_20 * (half)25.0)) / (half)32.0);
+    half4 tmpvar_57;
+    tmpvar_57 = _PalTex.sample(_mtlsmp__PalTex, (float2)(tmpvar_56));
+    float tmpvar_58;
+    if ((green_24 >= 4)) {
+      tmpvar_58 = 0.2;
+    } else {
+      tmpvar_58 = 0.0;
+    };
+    float4 tmpvar_59;
+    tmpvar_59 = mix ((float4)tmpvar_52, (float4)tmpvar_57, float4((tmpvar_58 * _mtl_u._Grime)));
+    setColor_6 = half4(tmpvar_59);
+    if ((effectCol_23 == 100)) {
+      half4 decalCol_60;
+      half2 tmpvar_61;
+      tmpvar_61.y = half(0.999375);
+      tmpvar_61.x = (((half)255.5 - (texcol_3.z * (half)255.0)) / (half)1400.0);
+      half4 tmpvar_62;
+      tmpvar_62 = _MainTex.sample(_mtlsmp__MainTex, (float2)(tmpvar_61));
+      decalCol_60 = tmpvar_62;
+      if ((tmpvar_43 == 2)) {
+        decalCol_60 = mix (decalCol_60, (half4)float4(1.0, 1.0, 1.0, 1.0), half4(((half)0.2 - (shadow_21 * (half)0.1))));
+      };
+      half4 tmpvar_63;
+      tmpvar_63 = _PalTex.sample(_mtlsmp__PalTex, (float2)(float2(0.046875, 0.9375)));
+      float4 tmpvar_64;
+      tmpvar_64 = mix ((float4)decalCol_60, (float4)tmpvar_63, float4((float(tmpvar_47) / 60.0)));
+      decalCol_60 = half4(tmpvar_64);
+      half4 tmpvar_65;
+      tmpvar_65 = mix (setColor_6, decalCol_60, (half4)float4(0.7, 0.7, 0.7, 0.7));
+      half y_66;
+      y_66 = ((half)0.3 + ((half)0.4 * shadow_21));
+      float4 tmpvar_67;
+      half4 y_68;
+      y_68 = ((setColor_6 * decalCol_60) * (half)1.5);
+      tmpvar_67 = mix ((float4)tmpvar_65, (float4)y_68, float4(mix (0.9, (float)y_66, clamp (
+        ((float(tmpvar_47) - 3.5) * 0.3)
+      , 0.0, 1.0))));
+      setColor_6 = half4(tmpvar_67);
+    } else {
+      if (((green_24 > 0) && (green_24 < 3))) {
+        float2 tmpvar_69;
+        tmpvar_69.x = 0.953125;
+        tmpvar_69.y = ((5.5 - float(
+          ((effectCol_23 - 1) * 2)
+        )) / 8.0);
+        half4 tmpvar_70;
+        tmpvar_70 = _PalTex.sample(_mtlsmp__PalTex, (float2)(tmpvar_69));
+        float2 tmpvar_71;
+        tmpvar_71.x = 0.984375;
+        tmpvar_71.y = ((5.5 - float(
+          ((effectCol_23 - 1) * 2)
+        )) / 8.0);
+        half4 tmpvar_72;
+        tmpvar_72 = _PalTex.sample(_mtlsmp__PalTex, (float2)(tmpvar_71));
+        half4 tmpvar_73;
+        tmpvar_73 = mix (tmpvar_70, tmpvar_72, half4(shadow_21));
+        float2 tmpvar_74;
+        tmpvar_74.x = 0.953125;
+        tmpvar_74.y = ((4.5 - float(
+          ((effectCol_23 - 1) * 2)
+        )) / 8.0);
+        half4 tmpvar_75;
+        tmpvar_75 = _PalTex.sample(_mtlsmp__PalTex, (float2)(tmpvar_74));
+        float2 tmpvar_76;
+        tmpvar_76.x = 0.984375;
+        tmpvar_76.y = ((4.5 - float(
+          ((effectCol_23 - 1) * 2)
+        )) / 8.0);
+        half4 tmpvar_77;
+        tmpvar_77 = _PalTex.sample(_mtlsmp__PalTex, (float2)(tmpvar_76));
+        half4 tmpvar_78;
+        tmpvar_78 = mix (tmpvar_75, tmpvar_77, half4(shadow_21));
+        float4 tmpvar_79;
+        tmpvar_79 = mix ((float4)setColor_6, mix ((float4)tmpvar_73, (float4)tmpvar_78, float4((
+          float(tmpvar_47)
+         / 30.0))), (float4)texcol_3.zzzz);
+        setColor_6 = half4(tmpvar_79);
+      } else {
+        if ((green_24 == 3)) {
+          float4 tmpvar_80;
+          tmpvar_80 = mix ((float4)setColor_6, float4(1.0, 1.0, 1.0, 1.0), float4(((float)texcol_3.z * _mtl_u._SwarmRoom)));
+          setColor_6 = half4(tmpvar_80);
+        };
+      };
+    };
+    half4 tmpvar_81;
+    tmpvar_81 = _PalTex.sample(_mtlsmp__PalTex, (float2)(float2(0.046875, 0.9375)));
+    half tmpvar_82;
+    if ((tmpvar_47 < 10)) {
+      tmpvar_82 = mix (notFloorDark_22, (half)1.0, (half)0.5);
+    } else {
+      tmpvar_82 = half(1.0);
+    };
+    float4 tmpvar_83;
+    tmpvar_83 = mix ((float4)setColor_6, (float4)tmpvar_81, float4(clamp ((
+      ((float(tmpvar_47) * (float)tmpvar_82) * _mtl_u._fogAmount)
+     / 30.0), 0.0, 1.0)));
+    setColor_6 = half4(tmpvar_83);
+  };
+  setColor_6.xyz = (setColor_6.xyz * _mtl_i.xlv_COLOR.x);
+  half tmpvar_84;
+  tmpvar_84 = (((setColor_6.x * (half)0.2126) + (setColor_6.y * (half)0.7152)) + (setColor_6.z * (half)0.0722));
+  lum_2 = float(tmpvar_84);
+  half tmpvar_85;
+  tmpvar_85 = (_mtl_i.xlv_COLOR.y * (half)0.9);
+  t_1 = float(tmpvar_85);
+  float3 tmpvar_86;
+  tmpvar_86 = ((float3)setColor_6.xyz / ((1.0 - t_1) + (lum_2 * t_1)));
+  setColor_6.xyz = half3(tmpvar_86);
+  setColor_6.w = (setColor_6.w * _mtl_i.xlv_COLOR.w);
+  _mtl_o._glesFragData_0 = setColor_6;
+  return _mtl_o;
+}
+
+"
+}
+}
+ }
+}
+}
