@@ -7,12 +7,18 @@ using System.Reflection;
 
 namespace LineOfSight
 {
-    public class ShortcutDisplay : CosmeticSprite
+    internal class ShortcutDisplay : CosmeticSprite
     {
+        private LOSController owner;
         private Player Ply => (room.game.Players.Count > 0) ? room.game.Players[0].realizedCreature as Player : null;
 
         private float _alpha;
         private float _lastAlpha;
+
+        public ShortcutDisplay(LOSController owner)
+        {
+            this.owner = owner;
+        }
 
         public override void ApplyPalette(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, RoomPalette palette)
         {
@@ -26,6 +32,7 @@ namespace LineOfSight
             {
                 sLeaser.sprites[i].SetPosition(drawPos - camPos);
                 sLeaser.sprites[i].alpha = drawAlpha;
+                sLeaser.sprites[i].isVisible = !owner.hideAllSprites;
             }
 
             base.DrawSprites(sLeaser, rCam, timeStacker, camPos);
@@ -63,7 +70,7 @@ namespace LineOfSight
             ShortcutHandler.ShortCutVessel plyVessel = null;
             foreach (ShortcutHandler.ShortCutVessel vessel in room.game.shortcuts.transportVessels)
             {
-                if (vessel.creature == ply)
+                if (vessel.creature == ply && vessel.room == room.abstractRoom)
                 {
                     plyVessel = vessel;
                     break;

@@ -14,7 +14,7 @@ namespace LineOfSight
         public LineOfSightMod()
         {
             ModID = "Line of Sight";
-            Version = "0.1";
+            Version = "0.2";
             author = "Slime_Cubed";
         }
 
@@ -56,8 +56,9 @@ namespace LineOfSight
         {
             if (self.game != null)
             {
-                self.AddObject(new LOSController(self));
-                self.AddObject(new ShortcutDisplay());
+                LOSController losController;
+                self.AddObject(losController = new LOSController(self));
+                self.AddObject(new ShortcutDisplay(losController));
             }
             orig(self);
         }

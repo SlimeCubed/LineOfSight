@@ -36,40 +36,23 @@ namespace LineOfSight
         public MappingState state;
         
         private FieldInfo _Room_Tiles = typeof(Room).GetField("Tiles", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-        private FieldInfo _RoomCamera_SpriteLayers = typeof(RoomCamera).GetField("SpriteLayers", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
         public LOSController(Room room)
         {
-            int c = 0;
-            try
+            _x = 0;
+            _y = 0;
+
+            if (_fovShader == null)
             {
-                _x = 0;
-                _y = 0;
-
-                if (_fovShader == null)
-                {
-                    Material mat = new Material(Shaders.LevelOutOfFOV);
-                    _fovShader = FShader.CreateShader("LevelOutOfFOV", mat.shader);
-                }
-
-                c = 1;
-
-                _shader = LineOfSightMod.classic ? room.game.rainWorld.Shaders["Basic"] : _fovShader;
-
-                c = 2;
-
-                // Create a copy of the room's tiles
-                Room.Tile[,] fromTiles = (Room.Tile[,])_Room_Tiles.GetValue(room);
-                c = 3;
-                _tiles = new Room.Tile[fromTiles.GetLength(0), fromTiles.GetLength(1)];
-                c = 4;
-                Array.Copy(fromTiles, _tiles, fromTiles.Length);
-                c = 5;
+                Material mat = new Material(Shaders.LevelOutOfFOV);
+                _fovShader = FShader.CreateShader("LevelOutOfFOV", mat.shader);
             }
-            catch (Exception e)
-            {
-                Debug.Log($"Errored at checkpoint {c}");
-                throw e;
-            }
+
+            _shader = LineOfSightMod.classic ? room.game.rainWorld.Shaders["Basic"] : _fovShader;
+
+            // Create a copy of the room's tiles
+            Room.Tile[,] fromTiles = (Room.Tile[,])_Room_Tiles.GetValue(room);
+            _tiles = new Room.Tile[fromTiles.GetLength(0), fromTiles.GetLength(1)];
+            Array.Copy(fromTiles, _tiles, fromTiles.Length);
         }
 
         public List<Vector2> corners = new List<Vector2>();
@@ -312,9 +295,10 @@ namespace LineOfSight
                 _peekAlpha = 0f;
             }
 
-            // Only apply to Player 1
-            //if (room.game.Players.Count > 1)
-            //    hideAllSprites = true;
+            // Don't display in arena while multiple players are present
+            // This doesn't happen in story so that Monkland still works
+            if (room.game.IsArenaSession && room.game.Players.Count > 1)
+                hideAllSprites = true;
         }
 
         public override void InitiateSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam)
@@ -509,7 +493,6 @@ namespace LineOfSight
                     TriangleMesh peek = (TriangleMesh)sLeaser.sprites[2];
                     //if (peek.element != rCam.levelGraphic.element)
                     //    peek.element = rCam.levelGraphic.element;
-                    peek.isVisible = true;
                     if (_lastPeekAlpha != _peekAlpha)
                     {
                         Color[] cols = peek.verticeColors;
